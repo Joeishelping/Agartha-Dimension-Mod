@@ -1,0 +1,7 @@
+pack.name=Agartha - Frozen Heaven (Resources)
+pack.description=Textures, fog and particles for the Agartha sky-realm.
+item.agartha.frost_rune=Frost Rune of Agartha
+item.agartha.jarl_axe=Jarl's Frostbite Axe
+item.agartha.mead_horn=Horn of Honey Mead
+tile.agartha:cloud.name=Agartha Cloud
+tile.agartha:runestone.name=Agartha Return Runestone

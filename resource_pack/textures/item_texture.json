@@ -1,0 +1,9 @@
+{
+  "resource_pack_name": "agartha",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "agartha_frost_rune": { "textures": "textures/items/frost_rune" },
+    "agartha_jarl_axe": { "textures": "textures/items/jarl_axe" },
+    "agartha_mead_horn": { "textures": "textures/items/mead_horn" }
+  }
+}
