@@ -6,9 +6,10 @@
 // that box can be touched by this add-on.
 
 export const REALM = {
-  // World-space centre of the pocket. Must be a multiple of 16 (chunk aligned).
-  originX: 200000,
-  originZ: 200000,
+  // World-space centre of the pocket (any coordinates; the build grid is
+  // shifted to line up with Minecraft's 16-block chunks).
+  originX: 99890,
+  originZ: 100298,
 
   // Height of the snowfield plains. Mountains rise from here to the build limit.
   baseY: 200,
@@ -34,7 +35,7 @@ export const REALM = {
   clearToY: 319,
 
   // Bump to force a rebuild on worlds that already have an older realm.
-  buildVersion: 3,
+  buildVersion: 4,
 
   // Where souls arrive: the plaza before Heaven's Gate (relative coords).
   arrival: { x: 0.5, z: 176.5 },
@@ -45,12 +46,17 @@ export const B = REALM.baseY;
 /** Horizontal half extent of the reserved region, in blocks. */
 export const REGION_HALF = REALM.tileSize * (REALM.tileRange + 0.5);
 
+// Shift of the tile grid (relative coords) so tile edges land on chunk borders.
+const mod16 = (v) => ((v % 16) + 16) % 16;
+const SHIFT_X = -mod16(REALM.originX);
+const SHIFT_Z = -mod16(REALM.originZ);
+
 /** Relative (to origin) coordinates of the reserved region, inclusive. */
 export const REGION = {
-  minX: -REGION_HALF,
-  maxX: REGION_HALF - 1,
-  minZ: -REGION_HALF,
-  maxZ: REGION_HALF - 1,
+  minX: -REGION_HALF + SHIFT_X,
+  maxX: REGION_HALF - 1 + SHIFT_X,
+  minZ: -REGION_HALF + SHIFT_Z,
+  maxZ: REGION_HALF - 1 + SHIFT_Z,
   minY: REALM.clearFromY,
   maxY: REALM.clearToY,
 };
@@ -72,8 +78,8 @@ export function listTiles() {
     for (let j = -r; j <= r; j++) {
       tiles.push({
         i, j,
-        minX: i * s - s / 2, maxX: i * s + s / 2 - 1,
-        minZ: j * s - s / 2, maxZ: j * s + s / 2 - 1,
+        minX: i * s - s / 2 + SHIFT_X, maxX: i * s + s / 2 - 1 + SHIFT_X,
+        minZ: j * s - s / 2 + SHIFT_Z, maxZ: j * s + s / 2 - 1 + SHIFT_Z,
       });
     }
   }

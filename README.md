@@ -28,7 +28,7 @@ The All-Father stands before the Gates of Agartha. As each traveller arrives he 
 **Changing his skin:** replace `resource_pack/textures/entity/allfather.png` with any **64×64 Minecraft skin** (classic, 4-pixel arms). Any skin editor works. Rebuild the `.mcaddon` (or edit the installed resource pack) and he'll wear it.
 
 ## What's in Agartha
-A floating continent about **420 blocks across** at **X 200,000 / Z 200,000**, from the clouds (Y ~110) to the build limit (Y 318).
+A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,298**, from the clouds (Y ~110) to the build limit (Y 318).
 
 | Landmark | |
 |---|---|
@@ -66,7 +66,7 @@ A floating continent about **420 blocks across** at **X 200,000 / Z 200,000**, f
 | `/scriptevent agartha:gate_reset` | Forget the Gate's location, e.g. if it was destroyed by other means. |
 
 ## Safety
-Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket of the Overworld sky, 200,000 blocks out. **Every block the forge writes is bounds-checked** against one reserved box (X/Z 199,648 → 200,351, Y 96 → 319), and world generation is never changed. `tools/test_blueprint.mjs` verifies all ~820,000 build operations stay inside. The only thing built outside that box is the Heavenly Gate, where *you* choose to raise it.
+Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket of the Overworld sky centred on X 99,890 / Z 100,298. **Every block the forge writes is bounds-checked** against one reserved box (X 99,536 → 100,239, Z 99,936 → 100,639, Y 96 → 319), and world generation is never changed. `tools/test_blueprint.mjs` verifies all ~820,000 build operations stay inside. The only thing built outside that box is the Heavenly Gate, where *you* choose to raise it.
 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 

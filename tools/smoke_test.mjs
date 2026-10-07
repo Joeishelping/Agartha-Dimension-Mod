@@ -6,6 +6,9 @@ cpSync("behavior_pack/scripts", "tools/mock/scripts", { recursive: true });
 const mc = await import("./mock/node_modules/@minecraft/server/index.js");
 await import("./mock/scripts/main.js");
 const { __subs: subs, system, makePlayer, __messages, blocks, world } = mc;
+const { REALM, B } = await import("./mock/scripts/config.js");
+const OX = REALM.originX, OZ = REALM.originZ;
+const exitKey = `${OX},${B + 1},${OZ + 189}`;
 let fails = 0;
 const expect = (c, m) => { console.log(c ? "ok  " : "FAIL", m); if (!c) fails++; };
 const fire = (n, e) => (subs[n] ?? []).forEach((f) => f(e));
@@ -43,17 +46,17 @@ p.location = { x: 50.5, y: 64, z: 52.5 }; ticks(2);
 p.location = { x: 50.5, y: 64, z: 51.5 }; ticks(2);
 p.location = { x: 50.5, y: 64, z: 50.5 }; ticks(2);
 ticks(10);
-expect(inRealm(p) && Math.abs(p.location.z - 200176.5) < 1, "walking through the Gate arrives at the Gates of Agartha");
+expect(inRealm(p) && Math.abs(p.location.z - (OZ + REALM.arrival.z)) < 1 && Math.abs(p.location.x - (OX + REALM.arrival.x)) < 1, "walking through the Gate arrives at the Gates of Agartha");
 ticks(80);
 expect(p.log.some((e) => e[0] === "msg" && e[1].includes("All-Father")), "the All-Father welcomes the arrival");
 
 // Break part of the exit; it mends itself.
-blocks.delete("200000,201,200189");
+blocks.delete(exitKey);
 ticks(220);
-expect(blocks.get("200000,201,200189") === "agartha:portal", "the exit portal mends itself");
+expect(blocks.get(exitKey) === "agartha:portal", "the exit portal mends itself");
 
 // The one exit.
-p.location = { x: 200000.5, y: 201, z: 200189.5 };
+p.location = { x: OX + 0.5, y: B + 1, z: OZ + 189.5 };
 ticks(2);
 expect(!inRealm(p) && Math.abs(p.location.z - 51.5) < 0.01, "the exit returns you before the Heavenly Gate");
 ticks(6);
@@ -74,7 +77,7 @@ fire("playerPlaceBlock", { player: p, block: dim.getBlock({ x: 500, y: 64, z: 50
 expect(blocks.get("500,64,500") === "minecraft:air", "portal blocks placed elsewhere are refused");
 
 // Tearing the Gate down returns its Keystone.
-for (const [k, v] of [...blocks]) if (v === "agartha:portal" && !k.startsWith("2000")) blocks.delete(k);
+for (const [k, v] of [...blocks]) if (v === "agartha:portal" && Number(k.split(",")[0]) < 1000) blocks.delete(k);
 fire("playerBreakBlock", { player: p, brokenBlockPermutation: { type: { id: "agartha:portal" } }, dimension: dim });
 expect(p.items.includes("agartha:gate_keystone"), "the fallen Gate's Keystone returns");
 rmSync("tools/mock/scripts", { recursive: true, force: true });
