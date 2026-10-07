@@ -7,24 +7,80 @@
       "is_summonable": true
     },
     "components": {
-      "minecraft:type_family": { "family": ["agartha_allfather", "inanimate"] },
-      "minecraft:collision_box": { "width": 0.6, "height": 1.8 },
-      "minecraft:scale": { "value": 2.5 },
-      "minecraft:health": { "value": 1000, "max": 1000 },
-      "minecraft:damage_sensor": { "triggers": [{ "cause": "all", "deals_damage": "no" }] },
+      "minecraft:type_family": {
+        "family": [
+          "agartha_allfather",
+          "inanimate"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.8
+      },
+      "minecraft:scale": {
+        "value": 2.5
+      },
+      "minecraft:health": {
+        "value": 1000,
+        "max": 1000
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "all",
+            "deals_damage": "no"
+          }
+        ]
+      },
       "minecraft:fire_immune": {},
-      "minecraft:knockback_resistance": { "value": 1 },
-      "minecraft:pushable": { "is_pushable": false, "is_pushable_by_piston": false },
+      "minecraft:knockback_resistance": {
+        "value": 1
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
       "minecraft:physics": {},
       "minecraft:persistent": {},
-      "minecraft:nameable": { "always_show": false, "allow_name_tag_renaming": false },
-      "minecraft:movement": { "value": 0 },
+      "minecraft:nameable": {
+        "always_show": false,
+        "allow_name_tag_renaming": false
+      },
+      "minecraft:movement": {
+        "value": 0.12
+      },
       "minecraft:behavior.look_at_player": {
-        "priority": 1,
+        "priority": 3,
         "look_distance": 24,
-        "probability": 1.0,
+        "probability": 0.6,
         "angle_of_view_horizontal": 360,
         "angle_of_view_vertical": 120
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "can_walk": true,
+        "avoid_water": true,
+        "can_path_over_water": false
+      },
+      "minecraft:jump.static": {},
+      "minecraft:home": {
+        "restriction_radius": 9
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 4,
+        "speed_multiplier": 0.8,
+        "xz_dist": 6,
+        "y_dist": 1,
+        "interval": 160
+      },
+      "minecraft:behavior.go_home": {
+        "priority": 2,
+        "speed_multiplier": 1.0,
+        "interval": 60,
+        "goal_radius": 3
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 6
       }
     }
   }

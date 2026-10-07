@@ -51,6 +51,22 @@ export const LAYOUT = {
   // Guardians of the northern glacier, carved standing in the cliffs.
   argonath: [{ x: -124, z: -168 }, { x: -76, z: -168 }],
   summit: { x: -40, z: -178, y: B + 100 },
+  // Norse and Greek wonders (built by mythic.js).
+  mythic: {
+    yggdrasil: { x: -62, z: 160 },
+    bifrost: { from: [17, 184] },
+    heimdall: { x: 150, z: 252, y: B + 12, r: 13 },
+    tholoi: [{ x: -62, z: -50 }, { x: 50, z: 62 }],
+    runeRing: { x: -38, z: 76 },
+    animals: [
+      { kind: "stag", x: -60, z: -20, facing: "east", s: 1.2 },
+      { kind: "bear", x: 55, z: -25, facing: "west", s: 1.1 },
+      { kind: "swan", x: 22, z: 38, facing: "west", s: 1.0 },
+      { kind: "swan", x: 34, z: 45, facing: "west", s: 0.9 },
+      { kind: "horse", x: -20, z: 38, facing: "south", s: 1.1 },
+      { kind: "stag", x: 66, z: 8, facing: "west", s: 1.1 },
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -122,6 +138,10 @@ const PADS = [
   ...L.argonath.map((a) => circlePad(a.x, a.z, 12, B + 14, 6, true)),
   // Summit of the Pole Star shrine.
   circlePad(L.summit.x, L.summit.z, 11, L.summit.y, 16, true),
+  // Yggdrasil's mound, the tholoi and the rune ring.
+  circlePad(L.mythic.yggdrasil.x, L.mythic.yggdrasil.z, 12, B + 3, 14, true),
+  ...L.mythic.tholoi.map((t) => circlePad(t.x, t.z, 11, B, 6, true)),
+  circlePad(L.mythic.runeRing.x, L.mythic.runeRing.z, 13, B, 6, true),
 ];
 
 function padWeight(p, x, z) {
@@ -311,5 +331,9 @@ export function isReserved(x, z, margin = 0) {
   for (const h of L2.halls) if (Math.abs(x - h.x) < 16 + margin && z > h.z - 26 && z < h.z + 16) return true;
   for (const a of L2.argonath) if (Math.hypot(x - a.x, z - a.z) < 15 + margin) return true;
   if (Math.hypot(x - L2.summit.x, z - L2.summit.z) < 14 + margin) return true;
+  const my = L2.mythic;
+  if (Math.hypot(x - my.yggdrasil.x, z - my.yggdrasil.z) < 30 + margin) return true;
+  for (const t of my.tholoi) if (Math.hypot(x - t.x, z - t.z) < 13 + margin) return true;
+  if (Math.hypot(x - my.runeRing.x, z - my.runeRing.z) < 15 + margin) return true;
   return false;
 }

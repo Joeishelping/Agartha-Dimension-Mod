@@ -80,6 +80,18 @@ expect(blocks.get("500,64,500") === "minecraft:air", "portal blocks placed elsew
 for (const [k, v] of [...blocks]) if (v === "agartha:portal" && Number(k.split(",")[0]) < 1000) blocks.delete(k);
 fire("playerBreakBlock", { player: p, brokenBlockPermutation: { type: { id: "agartha:portal" } }, dimension: dim });
 expect(p.items.includes("agartha:gate_keystone"), "the fallen Gate's Keystone returns");
+// Erasing Agartha.
+p.location = { x: 40, y: 64, z: 50 };
+const before = mc.cmds.length;
+fire("system.scriptEventReceive", { id: "agartha:erase", message: "", sourceEntity: p });
+expect(p.mode === "Spectator", "the eraser is carried over the site");
+t = 0; while (system.__busy() && t++ < 400000) system.__tick();
+expect(__messages.some((m) => m.includes("has been erased")), "erase completes");
+expect(mc.cmds.slice(before).every((c) => !c.startsWith("fill") || c.includes(" minecraft:air ")), "erase only clears blocks");
+expect(p.mode === "Survival" && p.location.x === 40, "the eraser is returned home");
+p.location = { x: 50.5, y: 64, z: 52.5 }; ticks(60);
+p.location = { x: 50.5, y: 64, z: 50.5 }; ticks(4);
+expect(!inRealm(p), "after erasing, the Gate no longer leads anywhere");
 rmSync("tools/mock/scripts", { recursive: true, force: true });
 if (fails) process.exit(1);
 console.log("smoke test passed");

@@ -17,13 +17,14 @@
 // Operator commands (/scriptevent):
 //   agartha:forge        forge (or finish forging) the realm, in person
 //   agartha:rebuild      rebuild the realm from scratch
+//   agartha:erase        remove everything Agartha built (in person)
 //   agartha:keystone     receive the Keystone again (only if no Gate stands)
 //   agartha:gate_reset   forget the Gate so a new one can be raised
 
 import { world, system, GameMode, EquipmentSlot, ItemStack } from "@minecraft/server";
 import { REALM, REGION, B, IDS } from "./config.js";
 import { LAYOUT } from "./terrain.js";
-import { ensureRealmBuilt, isRealmBuilt, isRealmBuilding, markRealmUnbuilt } from "./builder.js";
+import { ensureRealmBuilt, eraseRealm, isRealmBuilt, isRealmBuilding, markRealmUnbuilt } from "./builder.js";
 import { buildGate } from "./gate.js";
 
 const TAG = "agartha_in_realm";
@@ -150,6 +151,47 @@ function restoreForger(player) {
   }
 }
 
+/** Puts the operator in spectator mode so they can be carried over the site. */
+function liftForger(player) {
+  if (!player.getDynamicProperty(FORGER_KEY)) {
+    const l = player.location;
+    player.setDynamicProperty(FORGER_KEY, JSON.stringify({ mode: player.getGameMode(), x: l.x, y: l.y, z: l.z, dim: player.dimension.id }));
+  }
+  player.setGameMode(GameMode.Spectator);
+}
+
+function erase(player) {
+  if (world.getAllPlayers().some((p) => p.hasTag(TAG))) {
+    player?.sendMessage("§cEveryone must leave Agartha before it can be erased.");
+    return;
+  }
+  if (player) {
+    liftForger(player);
+    player.sendMessage("§7You rise to unmake Agartha. §7You will be carried over the site; stay in the game.");
+  }
+  world.sendMessage("§7Agartha is being erased...");
+  let lastStep = -1;
+  eraseRealm(
+    () => {
+      world.sendMessage("§7Agartha has been erased. §fForge it again with /scriptevent agartha:forge.");
+      if (player?.isValid) restoreForger(player);
+    },
+    (pct) => {
+      if (player?.isValid) player.onScreenDisplay.setActionBar(`§7Erasing Agartha... §f${pct}%`);
+      const step = Math.floor(pct / 25) * 25;
+      if (step > lastStep) {
+        lastStep = step;
+        world.sendMessage(`§7Erasing Agartha... §f${step}%`);
+      }
+    },
+    (err) => {
+      world.sendMessage(`§cErasing paused: ${err}`);
+      if (player?.isValid) restoreForger(player);
+    },
+    player
+  );
+}
+
 function forge(player) {
   if (isRealmBuilt()) {
     player?.sendMessage("§7Agartha is already forged.");
@@ -160,9 +202,7 @@ function forge(player) {
     return;
   }
   if (player) {
-    const l = player.location;
-    player.setDynamicProperty(FORGER_KEY, JSON.stringify({ mode: player.getGameMode(), x: l.x, y: l.y, z: l.z, dim: player.dimension.id }));
-    player.setGameMode(GameMode.Spectator);
+    liftForger(player);
     player.sendMessage("§bYou rise to forge Agartha. §7You will be carried over the site while it is built; stay in the game. When it is done you will be returned here.");
   }
   world.sendMessage("§bAgartha is being forged in the heavens...");
@@ -465,6 +505,9 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, sourceEntity }) => {
         forge(player);
       }
       break;
+    case "agartha:erase":
+      erase(player);
+      break;
     case "agartha:keystone":
       if (!player) break;
       if (gate()) reply("§cThe Heavenly Gate already stands. Tear it down (or use agartha:gate_reset) first.");
@@ -531,17 +574,28 @@ function realmTick() {
     }
     if (tick % 20 === 0) spawnFx(player, "agartha:snowfall", 0, 7, 0);
     if (tick % 30 === 0) spawnFx(player, "agartha:holy_motes", 0, 0, 0);
-    if (tick % 40 === 0) {
-      // Aurora curtains: mostly over the northern mountains, sometimes overhead.
+    if (tick % 30 === 0) {
+      // Aurora curtains overhead, mostly toward the northern mountains. Kept
+      // within ~50 blocks: particles further away are culled by the game.
       const a = (Math.random() < 0.7 ? -Math.PI / 2 : 0) + (Math.random() - 0.5) * Math.PI * 1.4;
-      const d = 50 + Math.random() * 50;
-      spawnFx(player, "agartha:aurora", Math.cos(a) * d, 55 + Math.random() * 35, Math.sin(a) * d);
+      const d = 18 + Math.random() * 26;
+      spawnFx(player, "agartha:aurora", Math.cos(a) * d, 30 + Math.random() * 18, Math.sin(a) * d);
     }
     if (tick % 50 === 0) spawnFx(player, "agartha:mist", (Math.random() - 0.5) * 30, -1, (Math.random() - 0.5) * 30);
     if (tick % 200 === 0) player.addEffect("night_vision", 20 * 30, { showParticles: false });
   }
 
   if (anyoneHere && tick % 200 === 0 && !isRealmBuilding()) mendExit();
+  if (anyoneHere && tick % 360 === 0 && !isRealmBuilding()) {
+    // The All-Father blesses those near the Gates.
+    try {
+      const af = allFather();
+      const near = af?.dimension.getPlayers({ location: af.location, maxDistance: 20 });
+      if (near?.length) af.playAnimation("animation.agartha.allfather.bless", { blendOutTime: 0.4 });
+    } catch {
+      // cosmetic
+    }
+  }
 
   // Anything else that falls through the clouds is gone too.
   if (anyoneHere && tick % 10 === 0 && !isRealmBuilding()) {

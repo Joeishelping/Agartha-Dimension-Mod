@@ -20,8 +20,13 @@ const COLORS = {
   cloud: [250, 252, 255], wool_red: [160, 40, 40], wool_white: [235, 235, 235], wool: [200, 170, 60], bone: [225, 220, 200], lantern: [255, 190, 90], campfire: [255, 140, 40], end_rod: [255, 255, 250],
   hay: [200, 170, 50], gravel: [135, 130, 128], default: [160, 160, 160],
 };
+const DYES = { red: [200, 60, 60], orange: [235, 140, 50], yellow: [240, 220, 70], lime: [120, 220, 80], light_blue: [120, 190, 240], cyan: [60, 190, 200], blue: [60, 90, 220], purple: [150, 80, 210], magenta: [210, 90, 210], white: [240, 240, 240] };
 function colorFor(id) {
   const n = id.replace(/^\w+:/, "");
+  const dye = n.match(/^(\w+?)_(stained_glass|concrete)$/);
+  if (dye && DYES[dye[1]]) return DYES[dye[1]];
+  if (n.startsWith("birch_wood")) return [225, 222, 210];
+  if (n.startsWith("birch_leaves")) return [120, 160, 90];
   if (n === "cloud") return COLORS.cloud;
   if (n === "red_wool") return COLORS.wool_red;
   if (n === "white_wool") return COLORS.wool_white;
@@ -139,8 +144,10 @@ render("aerial_south", [0, 305, 345], [0, B + 10, -30], 1200, 675, 70);
 render("aerial_east", [330, 275, 40], [-20, B + 15, -60], 1200, 675, 70);
 render("aerial_west", [-330, 280, 60], [10, B + 20, -60], 1200, 675, 70);
 render("north_valley", [-70, B + 30, -40], [-95, B + 50, -170], 1200, 675, 75);
-render("pole", [30, B + 20, 40], [0, B + 60, -5], 1200, 675, 75);
-render("temple", [0, B + 12, -20], [0, B + 30, -110], 1200, 675, 75);
-render("icefall", [260, 190, 40], [190, 160, -8], 1200, 675, 75);
+render("palace", [0, B + 14, -30], [0, B + 40, -110], 1200, 675, 80);
+render("lake", [10, B + 8, 70], [0, B + 6, 0], 1200, 675, 80);
+render("yggdrasil", [-20, B + 15, 120], [-62, B + 35, 160], 1200, 675, 80);
+render("bifrost", [-10, B + 20, 170], [100, B + 30, 230], 1200, 675, 80);
+render("edge", [120, B + 10, 140], [220, B - 20, 230], 1200, 675, 80);
 render("night", A, [0, B + 40, 60], 1200, 675, 80, true);
 console.log("rendered in", (Date.now() - t0) / 1000, "s");

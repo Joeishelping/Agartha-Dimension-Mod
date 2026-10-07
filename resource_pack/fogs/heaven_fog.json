@@ -1,19 +1,21 @@
 {
   "format_version": "1.16.100",
   "minecraft:fog_settings": {
-    "description": { "identifier": "agartha:heaven_fog" },
+    "description": {
+      "identifier": "agartha:heaven_fog"
+    },
     "distance": {
       "air": {
-        "fog_start": 0.55,
-        "fog_end": 1.0,
-        "fog_color": "#E2EEFF",
-        "render_distance_type": "render"
+        "fog_start": 70,
+        "fog_end": 250,
+        "fog_color": "#E6F0FF",
+        "render_distance_type": "fixed"
       },
       "weather": {
-        "fog_start": 0.3,
-        "fog_end": 0.8,
+        "fog_start": 40,
+        "fog_end": 160,
         "fog_color": "#EEF5FF",
-        "render_distance_type": "render"
+        "render_distance_type": "fixed"
       },
       "water": {
         "fog_start": 0,

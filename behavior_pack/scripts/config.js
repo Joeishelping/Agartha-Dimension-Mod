@@ -35,7 +35,7 @@ export const REALM = {
   clearToY: 319,
 
   // Bump to force a rebuild on worlds that already have an older realm.
-  buildVersion: 4,
+  buildVersion: 5,
 
   // Where souls arrive: the plaza before Heaven's Gate (relative coords).
   arrival: { x: 0.5, z: 176.5 },

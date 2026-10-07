@@ -3,15 +3,32 @@
   "minecraft:client_entity": {
     "description": {
       "identifier": "agartha:allfather",
-      "materials": { "default": "entity_alphatest" },
-      "textures": { "default": "textures/entity/allfather" },
-      "geometry": { "default": "geometry.agartha.allfather" },
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/allfather"
+      },
+      "geometry": {
+        "default": "geometry.agartha.allfather"
+      },
       "animations": {
         "look_at_target": "animation.common.look_at_target",
-        "idle": "animation.agartha.allfather.idle"
+        "idle": "animation.agartha.allfather.idle",
+        "walk": "animation.agartha.allfather.walk"
       },
-      "scripts": { "animate": ["look_at_target", "idle"] },
-      "render_controllers": ["controller.render.default"]
+      "scripts": {
+        "animate": [
+          "look_at_target",
+          "idle",
+          {
+            "walk": "query.modified_move_speed > 0.01"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
     }
   }
 }

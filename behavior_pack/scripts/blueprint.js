@@ -8,6 +8,7 @@ import { fbm, hash2 } from "./noise.js";
 import { islandColumn, slopeAt, edgeRadius } from "./terrain.js";
 import { Canvas, boxesIntersect } from "./canvas.js";
 import { STRUCTURES } from "./structures.js";
+import { MYTHIC, nearBifrost } from "./mythic.js";
 import { forest, wildlife } from "./nature.js";
 
 export { islandColumn };
@@ -75,20 +76,30 @@ function terrain(c) {
 
 function clouds(c) {
   const t = c.tile;
-  const CR = REALM.cloudRadius;
+  const base = REALM.cloudBaseY;
+  // An unbroken floor of cloud under the whole pocket: nothing below shows.
+  for (let x = t.minX; x <= t.maxX; x += 16) {
+    for (let z = t.minZ; z <= t.maxZ; z += 16) {
+      c.fill(x, base - 1, z, x + 15, base + 1, z + 15, "agartha:cloud", undefined, "keep");
+    }
+  }
   for (let x = t.minX; x <= t.maxX; x++) {
     for (let z = t.minZ; z <= t.maxZ; z++) {
       const d = Math.hypot(x, z);
-      if (d > CR) continue;
-      // The sea of clouds below.
-      const edge = Math.max(0, (d - CR * 0.8) / (CR * 0.2));
-      const thr = 0.4 + 0.25 * edge;
+      const edgeR = edgeRadius(x, z);
+      // Billowing tops on the cloud sea.
       const n = fbm(x / 26, z / 26, 11, 4);
-      if (n >= thr) {
-        const th = Math.min(7, 1 + Math.floor((n - thr) * 18));
-        const base = REALM.cloudBaseY + Math.floor(fbm(x / 40, z / 40, 12) * 4);
-        c.fill(x, base - Math.floor(th / 2), z, x, base + th - 1, z, "agartha:cloud", undefined, "keep");
+      let top = base + 1;
+      if (n > 0.42) top = base + 1 + Math.min(9, Math.floor((n - 0.42) * 30));
+      // Towering cloud walls around the rim of the world, with gaps to look through.
+      if (d > edgeR + 4 && !nearBifrost(x, z, 12)) {
+        const k = (d - edgeR - 38) / 48;
+        const bump = Math.max(0, 1 - k * k);
+        const wall = Math.floor(bump * 85 * (0.25 + fbm(x / 32, z / 32, 29, 3) * 1.1) - 8);
+        if (wall > 0) top = Math.max(top, base + 1 + wall);
       }
+      const dip = n > 0.5 ? Math.floor((n - 0.5) * 12) : 0;
+      if (top > base + 1 || dip > 0) c.fill(x, base - 1 - dip, z, x, top, z, "agartha:cloud", undefined, "keep");
       // Cloud belts drifting between the mountain peaks.
       const col = islandColumn(x, z);
       if (z < -110 || (d > 130 && z < 20)) {
@@ -100,12 +111,12 @@ function clouds(c) {
         }
       }
       // Drifting cloud banks at island height, just beyond the edge.
-      if (d > edgeRadius(x, z) + 10) {
+      if (d > edgeR + 10 && !nearBifrost(x, z, 8)) {
         const m = fbm(x / 18, z / 18, 17, 3);
         if (m > 0.66) {
           const th = 1 + Math.floor((m - 0.66) * 25);
-          const base = 172 + Math.floor(fbm(x / 60, z / 60, 18) * 40);
-          c.fill(x, base, z, x, base + th, z, "agartha:cloud", undefined, "keep");
+          const by = 172 + Math.floor(fbm(x / 60, z / 60, 18) * 40);
+          c.fill(x, by, z, x, by + th, z, "agartha:cloud", undefined, "keep");
         }
       }
     }
@@ -122,13 +133,20 @@ function clear(c) {
   }
 }
 
+/** Operations that wipe one tile of the pocket back to empty sky. */
+export function* eraseOps(tile) {
+  const c = new Canvas(tile);
+  clear(c);
+  yield* c.ops;
+}
+
 /**
  * Every operation needed to build one tile, in order. Yields batches (arrays)
  * so callers can interleave work.
  */
 export function* tileOps(tile) {
   const steps = [clear, terrain, forest];
-  for (const s of STRUCTURES) if (boxesIntersect(s.bounds, tile)) steps.push(s.build);
+  for (const s of [...STRUCTURES, ...MYTHIC]) if (boxesIntersect(s.bounds, tile)) steps.push(s.build);
   steps.push(clouds, wildlife);
   for (const step of steps) {
     const c = new Canvas(tile);

@@ -23,7 +23,7 @@ The **return portal** stands right behind the arrival point. Walk through it and
 Falling off Agartha through the clouds is instant death, followed by a normal respawn in the mortal world.
 
 ## The All-Father
-The All-Father stands before the Gates of Agartha. As each traveller arrives he turns to them, opens his arms, and welcomes them home ("Welcome home, my child. You did well."). He can't be harmed or pushed and has no name tag.
+The All-Father stands before the Gates of Agartha. He walks slowly around the plaza, watches those who come near, and raises his hand to bless them. As each traveller arrives he turns to them, opens his arms, and welcomes them home ("Welcome home, my child. You did well."). He can't be harmed or pushed and has no name tag.
 
 **Changing his skin:** replace `resource_pack/textures/entity/allfather.png` with any **64×64 Minecraft skin** (classic, 4-pixel arms). Any skin editor works. Rebuild the `.mcaddon` (or edit the installed resource pack) and he'll wear it.
 
@@ -44,14 +44,18 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | **The Village** | Eight snow-roofed longhouses with smoking chimneys, a 39-block **mead hall** and a bonfire square. |
 | **Ice Pyramids** | Three stepped pyramids with beacons; the largest hides a **burial chamber**. |
 | **Pathways** | Quartz paths with gold inlay and lamps link the avenue, pyramids, temple, glacier, halls and citadel. Where the land is steep they cut stairs into the rock; over rivers they become bridges. |
-| **Mountains & sky** | A crown of needle-peaked mountains with white, ice-blue and stone strata and snow-dusted ledges. Cloud belts drift between the peaks, cloud banks float around the edges, and a sea of clouds lies below. |
-| **Atmosphere** | **Aurora curtains** (green, teal and violet) ripple over the mountains day and night, along with drifting mist, falling snow, golden light motes and a soft heavenly haze. No hostile mobs spawn. |
+| **Yggdrasil** | The white world tree on its mound in the south-west: a frosted canopy hung with glowing strands, and the Well of Urd among its roots. |
+| **The Bifröst** | A rainbow bridge arcing from the Heavenly Gates out over the clouds to **Heimdall's watchtower** on its own floating isle, crowned with the golden Gjallarhorn and a beacon. |
+| **Greek wonders** | Two round temples (tholoi) with golden-banded domes; the temple becomes an **ice palace** with domed towers, more spires, a golden frieze, roof statues and blue-flamed braziers. |
+| **Norse wonders** | A ring of rune stones, and white statues of stags, a polar bear, a horse and swans standing on the frozen lake. |
+| **Mountains & sky** | A crown of needle-peaked mountains with white, ice-blue and stone strata and snow-dusted ledges. Cloud belts drift between the peaks. Beyond the edge, **snowy peaks rise out of an unbroken sea of clouds**, and towering cloud walls ring the realm, so the world below is never seen. |
+| **Atmosphere** | **Aurora**: permanent ribbons of coloured glass hang in the northern sky, and aurora particle curtains ripple overhead day and night. There's drifting mist, falling snow, golden light motes and a soft haze that fades the horizon into white. No hostile mobs spawn. |
 
 | | |
 |---|---|
-| ![Aerial](docs/aerial_south.png) | ![The Pole](docs/pole.png) |
-| ![West](docs/aerial_west.png) | ![Temple](docs/temple.png) |
-| ![East](docs/aerial_east.png) | ![The glacier valley](docs/north_valley.png) |
+| ![Aerial](docs/aerial_south.png) | ![The ice palace](docs/palace.png) |
+| ![Yggdrasil](docs/yggdrasil.png) | ![The frozen lake](docs/lake.png) |
+| ![West](docs/aerial_west.png) | ![The glacier valley](docs/north_valley.png) |
 
 *(Previews come from `tools/preview.mjs`, a simple voxel renderer of the exact blueprint, not in-game screenshots. Particles such as the aurora aren't shown.)*
 
@@ -61,7 +65,8 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | Command | Effect |
 |---|---|
 | `/scriptevent agartha:forge` | Forge Agartha in person (or finish an interrupted forge). |
-| `/scriptevent agartha:rebuild` | Rebuild from scratch (everyone must leave Agartha first). |
+| `/scriptevent agartha:rebuild` | Wipe and forge again in one go, e.g. after installing an update (everyone must leave Agartha first). |
+| `/scriptevent agartha:erase` | **Delete Agartha**: removes everything the forge built (island, clouds, All-Father, animals), carrying you over the site like forging does. Whatever stood above Y 96 there before the first forge doesn't come back. The Heavenly Gate in your world is left alone; break it by hand. |
 | `/scriptevent agartha:keystone` | Get the Keystone again (only when no Gate stands). |
 | `/scriptevent agartha:gate_reset` | Forget the Gate's location, e.g. if it was destroyed by other means. |
 
@@ -71,7 +76,7 @@ Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.4.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.4.0 (Behavior)** and **Agartha v1.4.0 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.5.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.5.0 (Behavior)** and **Agartha v1.5.0 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 

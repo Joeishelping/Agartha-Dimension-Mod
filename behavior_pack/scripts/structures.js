@@ -175,7 +175,7 @@ function capsule(p, a, b) {
   return Math.hypot(apx - abx * t, apy - aby * t, apz - abz * t);
 }
 
-function statue(c, cx, baseY, cz, s, facing = "south") {
+export function statue(c, cx, baseY, cz, s, facing = "south") {
   const P = Math.round(7 * s); // pedestal height
   const R = (k) => k * s;
   const robeTop = P + R(30);
@@ -359,7 +359,7 @@ function temple(c) {
   for (const [x, z] of [[cx1 + 2, cz1 + 2], [cx2 - 2, cz1 + 2], [cx1 + 2, cz2 - 2], [cx2 - 2, cz2 - 2]]) lampPost(c, x, F + 1, z);
 }
 
-function spire(c, x, z, baseY, height, radius) {
+export function spire(c, x, z, baseY, height, radius) {
   const towerTop = baseY + Math.round(height * 0.55);
   const tip = baseY + height;
   c.voxels(-radius - 1, radius + 1, -radius - 1, radius + 1, baseY, tip + 1, (u, v) => [x + u, z + v], (u, y, v) => {
@@ -835,7 +835,7 @@ function pyramid(c, p, withChamber) {
 // Giant ice crystals
 // ---------------------------------------------------------------------------
 
-function crystal(c, x, z, baseY, h, r, tx, tz) {
+export function crystal(c, x, z, baseY, h, r, tx, tz) {
   const top = [x + tx * h, baseY + h, z + tz * h];
   const base = [x, baseY - 3, z];
   const e = Math.ceil(r + Math.abs(tx * h) + Math.abs(tz * h)) + 1;

@@ -122,6 +122,92 @@
           }
         }
       }
+    },
+    "animation.agartha.allfather.walk": {
+      "loop": true,
+      "bones": {
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.anim_time * 260) * 26 * query.modified_move_speed * 4",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "-math.cos(query.anim_time * 260) * 26 * query.modified_move_speed * 4",
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "-math.cos(query.anim_time * 260) * 18 * query.modified_move_speed * 4",
+            0,
+            0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.anim_time * 260) * 18 * query.modified_move_speed * 4",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.agartha.allfather.bless": {
+      "animation_length": 3.0,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.6": [
+              -150,
+              -10,
+              10
+            ],
+            "2.2": [
+              -150,
+              -10,
+              10
+            ],
+            "3.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.8": [
+              -10,
+              0,
+              0
+            ],
+            "2.2": [
+              -10,
+              0,
+              0
+            ],
+            "3.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
     }
   }
 }

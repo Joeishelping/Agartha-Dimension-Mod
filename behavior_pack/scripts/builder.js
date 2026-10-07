@@ -11,7 +11,7 @@
 
 import { world, system, BlockPermutation } from "@minecraft/server";
 import { REALM, listTiles, isInsideRegion } from "./config.js";
-import { tileOps } from "./blueprint.js";
+import { tileOps, eraseOps } from "./blueprint.js";
 
 const TICKING_AREA = "agartha_build";
 const BUILT_KEY = "agartha:built_version";
@@ -41,6 +41,15 @@ const ALIASES = {
   "minecraft:blue_wool": [["minecraft:wool", { color: "blue" }]],
   "minecraft:dark_oak_fence": [["minecraft:fence", { wood_type: "dark_oak" }]],
 };
+/** Older engines used one block id with a colour/wood state for these. */
+function colourAlias(id) {
+  const m = id.match(/^minecraft:(\w+?)_(stained_glass|concrete|wool)$/);
+  if (m) return [[`minecraft:${m[2]}`, { color: m[1] }]];
+  const w = id.match(/^minecraft:(\w+?)_(wood|leaves)$/);
+  if (w) return [[w[2] === "wood" ? "minecraft:wood" : "minecraft:leaves", { wood_type: w[1], old_leaf_type: w[1], persistent_bit: true, pillar_axis: "y" }]];
+  return [];
+}
+
 const STATE_ALTERNATES = {
   "minecraft:vertical_half": (v) => ({ top_slot_bit: v === "top" }),
 };
@@ -65,7 +74,7 @@ function permutationFor(id, states) {
     else alt[k] = v;
   }
   let perm = tryResolve(id, states) ?? tryResolve(id, alt) ?? tryResolve(id, undefined);
-  for (const [aid, astates] of perm ? [] : ALIASES[id] ?? []) {
+  for (const [aid, astates] of perm ? [] : ALIASES[id] ?? colourAlias(id)) {
     perm = tryResolve(aid, { ...astates, ...alt }) ?? tryResolve(aid, astates);
     if (perm) break;
   }
@@ -121,6 +130,7 @@ function removeTickingArea(dim) {
 }
 
 let building = false;
+let mode = "forge";
 const waiters = [];
 let forger;
 
@@ -134,6 +144,10 @@ export function markRealmUnbuilt() {
   world.setDynamicProperty(PROGRESS_KEY, undefined);
 }
 
+export function isRealmErasing() {
+  return building && mode === "erase";
+}
+
 /**
  * Builds the realm if needed and calls onReady() when it is safe to enter.
  * onProgress(percent) is called as tiles complete. If `player` is given they
@@ -144,11 +158,43 @@ export function ensureRealmBuilt(onReady, onProgress, onError, player) {
     onReady?.();
     return;
   }
+  if (building && mode !== "forge") {
+    onError?.("Agartha is being erased right now.");
+    return;
+  }
   waiters.push({ onReady, onProgress, onError });
   if (player) forger = player;
   if (building) return;
   building = true;
-  system.runJob(buildJob());
+  mode = "forge";
+  system.runJob(buildJob("forge"));
+}
+
+/** Wipes everything the forge built and forgets the realm. */
+export function eraseRealm(onDone, onProgress, onError, player) {
+  if (building) {
+    onError?.("Agartha is busy being forged or erased; try again when it finishes.");
+    return;
+  }
+  waiters.push({ onReady: onDone, onProgress, onError });
+  forger = player;
+  building = true;
+  mode = "erase";
+  world.setDynamicProperty(BUILT_KEY, undefined);
+  system.runJob(buildJob("erase"));
+}
+
+function removeEntities(dim, tile) {
+  try {
+    const found = dim.getEntities({
+      location: { x: REALM.originX + tile.minX, y: REALM.clearFromY, z: REALM.originZ + tile.minZ },
+      volume: { x: tile.maxX - tile.minX + 1, y: REALM.clearToY - REALM.clearFromY, z: tile.maxZ - tile.minZ + 1 },
+      excludeTypes: ["minecraft:player"],
+    });
+    for (const e of found) e.remove();
+  } catch {
+    // nothing loaded there
+  }
 }
 
 function notify(kind, arg) {
@@ -201,9 +247,9 @@ function* loadTile(dim, tile) {
   return false;
 }
 
-function readProgress() {
+function readProgress(key) {
   try {
-    const p = JSON.parse(world.getDynamicProperty(PROGRESS_KEY) ?? "null");
+    const p = JSON.parse(world.getDynamicProperty(key) ?? "null");
     if (p?.v === REALM.buildVersion) return p;
   } catch {
     // corrupt; start over
@@ -211,7 +257,9 @@ function readProgress() {
   return { v: REALM.buildVersion, done: [] };
 }
 
-function* buildJob() {
+function* buildJob(kind) {
+  const key = kind === "erase" ? `${PROGRESS_KEY}_erase` : PROGRESS_KEY;
+  const opsFor = kind === "erase" ? eraseOps : tileOps;
   const dim = overworld();
   const ox = REALM.originX;
   const oz = REALM.originZ;
@@ -226,7 +274,7 @@ function* buildJob() {
   };
 
   try {
-    const progress = readProgress();
+    const progress = readProgress(key);
     const done = new Set(progress.done);
     for (let pass = 0; pass < 2; pass++) {
       for (let t = 0; t < tiles.length; t++) {
@@ -234,7 +282,8 @@ function* buildJob() {
         const tile = tiles[t];
         notify("onProgress", Math.round((done.size / tiles.length) * 100));
         if (!(yield* loadTile(dim, tile))) continue; // retried on the next pass
-        for (const op of tileOps(tile)) {
+        if (kind === "erase") removeEntities(dim, tile);
+        for (const op of opsFor(tile)) {
           try {
             applyOp(dim, op, ox, oz, cmdId);
           } catch (e) {
@@ -243,16 +292,18 @@ function* buildJob() {
           yield;
         }
         done.add(t);
-        world.setDynamicProperty(PROGRESS_KEY, JSON.stringify({ v: REALM.buildVersion, done: [...done] }));
+        world.setDynamicProperty(key, JSON.stringify({ v: REALM.buildVersion, done: [...done] }));
       }
     }
     removeTickingArea(dim);
     const missing = tiles.length - done.size;
     if (missing > 0) {
-      throw new Error(`${missing} sections could not be loaded. Run /scriptevent agartha:forge again to finish them (progress is saved).`);
+      throw new Error(`${missing} sections could not be loaded. Run /scriptevent agartha:${kind} again to finish them (progress is saved).`);
     }
-    world.setDynamicProperty(BUILT_KEY, REALM.buildVersion);
-    world.setDynamicProperty(PROGRESS_KEY, undefined);
+    if (kind === "forge") world.setDynamicProperty(BUILT_KEY, REALM.buildVersion);
+    world.setDynamicProperty(key, undefined);
+    // A finished erase means the next forge starts fresh, and vice versa.
+    world.setDynamicProperty(kind === "erase" ? PROGRESS_KEY : `${PROGRESS_KEY}_erase`, undefined);
     if (failures) console.warn(`[Agartha] Realm built with ${failures} failed operations.`);
     finish("onReady");
   } catch (e) {
