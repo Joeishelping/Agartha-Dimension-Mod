@@ -4,9 +4,11 @@
   "padding": 8,
   "num_mip_levels": 4,
   "texture_data": {
-    "agartha_cloud": { "textures": "textures/blocks/agartha_cloud" },
-    "agartha_runestone": { "textures": "textures/blocks/agartha_runestone" },
-    "agartha_runestone_top": { "textures": "textures/blocks/agartha_runestone_top" },
-    "agartha_portal": { "textures": "textures/blocks/agartha_portal" }
+    "agartha_cloud": {
+      "textures": "textures/blocks/agartha_cloud"
+    },
+    "agartha_portal": {
+      "textures": "textures/blocks/agartha_portal"
+    }
   }
 }

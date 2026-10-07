@@ -3,18 +3,26 @@
   "minecraft:block": {
     "description": {
       "identifier": "agartha:cloud",
-      "menu_category": { "category": "nature" }
+      "menu_category": {
+        "category": "nature"
+      }
     },
     "components": {
       "minecraft:geometry": "minecraft:geometry.full_block",
       "minecraft:material_instances": {
-        "*": { "texture": "agartha_cloud", "render_method": "blend" }
+        "*": {
+          "texture": "agartha_cloud",
+          "render_method": "blend"
+        }
       },
       "minecraft:collision_box": false,
-      "minecraft:selection_box": false,
       "minecraft:light_dampening": 0,
-      "minecraft:destructible_by_mining": false,
-      "minecraft:destructible_by_explosion": false,
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0.2
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 0
+      },
       "minecraft:map_color": "#F4F8FF",
       "minecraft:display_name": "tile.agartha:cloud.name"
     }

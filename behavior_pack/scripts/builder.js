@@ -1,9 +1,13 @@
 // Builds the realm in the world from the blueprint, one tile at a time.
 //
-// Each tile is loaded with a temporary ticking area, built inside a
-// system.runJob generator (so the game never freezes), then the ticking area
-// is removed. Every coordinate is validated against the reserved region
-// before anything is written.
+// Minecraft only lets scripts write into loaded chunks, and far-away chunks
+// can be slow to load. So each 64x64 tile is loaded two ways at once: the
+// forging player is flown (in spectator mode) to hover above it, and a small
+// ticking area is placed over it. Tiles that still fail to load are retried
+// later, and progress is saved so an interrupted forge resumes where it left
+// off. All work runs inside system.runJob so the game never freezes. Every
+// coordinate is validated against the reserved region before anything is
+// written.
 
 import { world, system, BlockPermutation } from "@minecraft/server";
 import { REALM, listTiles, isInsideRegion } from "./config.js";
@@ -11,6 +15,9 @@ import { tileOps } from "./blueprint.js";
 
 const TICKING_AREA = "agartha_build";
 const BUILT_KEY = "agartha:built_version";
+const PROGRESS_KEY = "agartha:build_progress";
+const LOAD_WAIT_TICKS = 20 * 45;
+const LOAD_ATTEMPTS = 3;
 
 // Fallbacks for ids/states that differ between Bedrock versions.
 const ALIASES = {
@@ -115,11 +122,8 @@ function removeTickingArea(dim) {
 
 let building = false;
 const waiters = [];
+let forger;
 
-/**
- * Builds the realm if needed and calls onReady() when it is safe to enter.
- * onProgress(percent) is called as tiles complete.
- */
 export function isRealmBuilding() {
   return building;
 }
@@ -127,14 +131,21 @@ export function isRealmBuilding() {
 /** Forgets the built realm so the next ensureRealmBuilt() rebuilds it. */
 export function markRealmUnbuilt() {
   world.setDynamicProperty(BUILT_KEY, undefined);
+  world.setDynamicProperty(PROGRESS_KEY, undefined);
 }
 
-export function ensureRealmBuilt(onReady, onProgress, onError) {
+/**
+ * Builds the realm if needed and calls onReady() when it is safe to enter.
+ * onProgress(percent) is called as tiles complete. If `player` is given they
+ * are flown over the site while it builds (the caller sets spectator mode).
+ */
+export function ensureRealmBuilt(onReady, onProgress, onError, player) {
   if (isRealmBuilt()) {
     onReady?.();
     return;
   }
   waiters.push({ onReady, onProgress, onError });
+  if (player) forger = player;
   if (building) return;
   building = true;
   system.runJob(buildJob());
@@ -148,6 +159,56 @@ function notify(kind, arg) {
       console.warn(`[Agartha] ${e}`);
     }
   }
+}
+
+function* waitTicks(n) {
+  const until = system.currentTick + n;
+  while (system.currentTick < until) yield;
+}
+
+function hover(dim, tile) {
+  if (!forger?.isValid) return;
+  const x = REALM.originX + (tile.minX + tile.maxX + 1) / 2;
+  const z = REALM.originZ + (tile.minZ + tile.maxZ + 1) / 2;
+  try {
+    forger.teleport({ x, y: 300, z }, { dimension: dim, rotation: { x: 89, y: 0 } });
+  } catch {
+    // player busy (e.g. respawning); the ticking area still works
+  }
+}
+
+/** Loads a tile; returns true when every corner is readable. */
+function* loadTile(dim, tile) {
+  const ox = REALM.originX;
+  const oz = REALM.originZ;
+  for (let attempt = 0; attempt < LOAD_ATTEMPTS; attempt++) {
+    removeTickingArea(dim);
+    try {
+      dim.runCommand(`tickingarea add ${ox + tile.minX} ${REALM.baseY} ${oz + tile.minZ} ${ox + tile.maxX} ${REALM.baseY} ${oz + tile.maxZ} ${TICKING_AREA} true`);
+    } catch (e) {
+      if (attempt === 0) console.warn(`[Agartha] ticking area unavailable (${e}); relying on the forging player.`);
+    }
+    const start = system.currentTick;
+    while (system.currentTick - start < LOAD_WAIT_TICKS) {
+      if ((system.currentTick - start) % 100 === 0) hover(dim, tile);
+      if (tileLoaded(dim, tile)) {
+        yield* waitTicks(2);
+        return true;
+      }
+      yield* waitTicks(1);
+    }
+  }
+  return false;
+}
+
+function readProgress() {
+  try {
+    const p = JSON.parse(world.getDynamicProperty(PROGRESS_KEY) ?? "null");
+    if (p?.v === REALM.buildVersion) return p;
+  } catch {
+    // corrupt; start over
+  }
+  return { v: REALM.buildVersion, done: [] };
 }
 
 function* buildJob() {
@@ -165,41 +226,52 @@ function* buildJob() {
   };
 
   try {
-    for (let t = 0; t < tiles.length; t++) {
-      const tile = tiles[t];
-      notify("onProgress", Math.round((t / tiles.length) * 100));
-
-      removeTickingArea(dim);
-      dim.runCommand(
-        `tickingarea add ${ox + tile.minX} ${REALM.baseY} ${oz + tile.minZ} ${ox + tile.maxX} ${REALM.baseY} ${oz + tile.maxZ} ${TICKING_AREA} true`
-      );
-      const start = system.currentTick;
-      while (!tileLoaded(dim, tile)) {
-        if (system.currentTick - start > 20 * 60) throw new Error("Timed out waiting for realm chunks to load.");
-        yield;
-      }
-
-      for (const op of tileOps(tile)) {
-        try {
-          applyOp(dim, op, ox, oz, cmdId);
-        } catch (e) {
-          if (failures++ < 5) console.warn(`[Agartha] op failed ${JSON.stringify(op)}: ${e}`);
+    const progress = readProgress();
+    const done = new Set(progress.done);
+    for (let pass = 0; pass < 2; pass++) {
+      for (let t = 0; t < tiles.length; t++) {
+        if (done.has(t)) continue;
+        const tile = tiles[t];
+        notify("onProgress", Math.round((done.size / tiles.length) * 100));
+        if (!(yield* loadTile(dim, tile))) continue; // retried on the next pass
+        for (const op of tileOps(tile)) {
+          try {
+            applyOp(dim, op, ox, oz, cmdId);
+          } catch (e) {
+            if (failures++ < 5) console.warn(`[Agartha] op failed ${JSON.stringify(op)}: ${e}`);
+          }
+          yield;
         }
-        yield;
+        done.add(t);
+        world.setDynamicProperty(PROGRESS_KEY, JSON.stringify({ v: REALM.buildVersion, done: [...done] }));
       }
     }
     removeTickingArea(dim);
+    const missing = tiles.length - done.size;
+    if (missing > 0) {
+      throw new Error(`${missing} sections could not be loaded. Run /scriptevent agartha:forge again to finish them (progress is saved).`);
+    }
     world.setDynamicProperty(BUILT_KEY, REALM.buildVersion);
+    world.setDynamicProperty(PROGRESS_KEY, undefined);
     if (failures) console.warn(`[Agartha] Realm built with ${failures} failed operations.`);
-    building = false;
-    const ready = waiters.splice(0);
-    for (const w of ready) w.onReady?.();
+    finish("onReady");
   } catch (e) {
     removeTickingArea(dim);
-    building = false;
     console.error(`[Agartha] Realm build failed: ${e}`);
-    const failed = waiters.splice(0);
-    for (const w of failed) w.onError?.(String(e));
+    finish("onError", String(e.message ?? e));
+  }
+}
+
+function finish(kind, arg) {
+  building = false;
+  forger = undefined;
+  const list = waiters.splice(0);
+  for (const w of list) {
+    try {
+      w[kind]?.(arg);
+    } catch (e) {
+      console.warn(`[Agartha] ${e}`);
+    }
   }
 }
 

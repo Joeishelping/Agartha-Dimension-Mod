@@ -2,7 +2,14 @@
   "resource_pack_name": "agartha",
   "texture_name": "atlas.items",
   "texture_data": {
-    "agartha_jarl_axe": { "textures": "textures/items/jarl_axe" },
-    "agartha_mead_horn": { "textures": "textures/items/mead_horn" }
+    "agartha_jarl_axe": {
+      "textures": "textures/items/jarl_axe"
+    },
+    "agartha_mead_horn": {
+      "textures": "textures/items/mead_horn"
+    },
+    "agartha_gate_keystone": {
+      "textures": "textures/items/gate_keystone"
+    }
   }
 }

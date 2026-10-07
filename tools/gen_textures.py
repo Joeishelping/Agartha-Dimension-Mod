@@ -23,23 +23,14 @@ def cloud():
     return img
 
 
-def runestone(top=False):
-    img = Image.new("RGBA", (16, 16))
-    for x in range(16):
-        for y in range(16):
-            v = 70 + rnd.randint(0, 25)
-            img.putpixel((x, y), (v, v + 4, v + 12, 255))
+def gate_keystone():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    glow = (110, 220, 255, 255)
-    if top:
-        d.ellipse((3, 3, 12, 12), outline=glow)
-        d.point([(7, 7), (8, 8), (7, 8), (8, 7)], fill=glow)
-    else:
-        # Algiz-like rune.
-        d.line((8, 2, 8, 13), fill=glow)
-        d.line((8, 7, 4, 3), fill=glow)
-        d.line((8, 7, 12, 3), fill=glow)
-    d.rectangle((0, 0, 15, 15), outline=(50, 54, 64, 255))
+    d.polygon([(4, 14), (12, 14), (14, 4), (8, 1), (2, 4)], fill=(236, 232, 222, 255), outline=(170, 160, 140, 255))
+    d.polygon([(6, 12), (10, 12), (11, 6), (8, 4), (5, 6)], fill=(140, 215, 255, 255))
+    d.point([(8, 7), (7, 8), (9, 8), (8, 9)], fill=(255, 255, 255, 255))
+    d.line((3, 4, 8, 1), fill=(250, 205, 60, 255))
+    d.line((8, 1, 13, 4), fill=(250, 205, 60, 255))
     return img
 
 
@@ -90,13 +81,88 @@ def snowflake():
 
 
 def aurora():
-    img = Image.new("RGBA", (8, 32))
-    for y in range(32):
-        t = y / 31
-        a = int(255 * (t ** 1.6) * (1 - max(0, t - 0.9) * 10))
+    """Vertical aurora curtain strip: violet crown, teal middle, bright green hem."""
+    img = Image.new("RGBA", (8, 64))
+    for y in range(64):
+        t = y / 63  # 0 top .. 1 bottom
+        if t < 0.35:
+            c = (150, 90, 230)
+            k = t / 0.35
+            c = tuple(int(a + (b2 - a) * k) for a, b2 in zip(c, (60, 220, 210)))
+        else:
+            k = (t - 0.35) / 0.65
+            c = tuple(int(a + (b2 - a) * k) for a, b2 in zip((60, 220, 210), (90, 255, 140)))
+        alpha = (t ** 1.3) * (1 - max(0, t - 0.92) * 12)
         for x in range(8):
             edge = 1 - abs(x - 3.5) / 4.5
-            img.putpixel((x, y), (255, 255, 255, max(0, int(a * edge))))
+            img.putpixel((x, y), c + (max(0, int(255 * alpha * edge)),))
+    return img
+
+
+def mist():
+    import math
+    img = Image.new("RGBA", (32, 32))
+    for x in range(32):
+        for y in range(32):
+            d = math.hypot(x - 15.5, y - 15.5) / 16
+            img.putpixel((x, y), (255, 255, 255, max(0, int(255 * (1 - d) ** 2))))
+    return img
+
+
+def allfather_skin():
+    """Default 64x64 skin (standard Minecraft skin layout). Replace freely."""
+    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    px = img.load()
+
+    def faces(u, v, w, h, d):
+        return {
+            "top": (u + d, v, w, d), "bottom": (u + d + w, v, w, d),
+            "right": (u, v + d, d, h), "front": (u + d, v + d, w, h),
+            "left": (u + d + w, v + d, d, h), "back": (u + 2 * d + w, v + d, w, h),
+        }
+
+    def paint(rect, fn):
+        x0, y0, w, h = rect
+        for x in range(w):
+            for y in range(h):
+                c = fn(x, y, w, h)
+                if c:
+                    px[x0 + x, y0 + y] = c
+
+    SKIN, HAIR, GOLD = (232, 196, 170, 255), (246, 246, 250, 255), (250, 205, 60, 255)
+    ROBE, TRIM, EYE = (238, 240, 248, 255), (70, 150, 220, 255), (90, 200, 255, 255)
+    noise = lambda c, k: tuple(min(255, max(0, v + k)) for v in c[:3]) + (255,)
+
+    head = faces(0, 0, 8, 8, 8)
+    for name, r in head.items():
+        if name == "front":
+            def f(x, y, w, h):
+                if y <= 1: return HAIR
+                if y == 3 and x in (1, 2, 5, 6): return EYE if x in (2, 5) else (255, 255, 255, 255)
+                if y >= 5 or (y == 4 and x in (0, 7)): return noise(HAIR, -6 * ((x + y) % 2))
+                return SKIN
+        elif name in ("top", "back"):
+            def f(x, y, w, h): return noise(HAIR, -5 * ((x * 3 + y) % 3))
+        else:
+            def f(x, y, w, h): return HAIR if y < 5 or x < 4 else SKIN
+        paint(r, f)
+    # Crown on the hat layer.
+    for name, r in faces(32, 0, 8, 8, 8).items():
+        if name in ("front", "back", "left", "right"):
+            paint(r, lambda x, y, w, h: GOLD if y == 1 or (y == 0 and x % 2 == 0) else None)
+
+    def robe(x, y, w, h):
+        if x == 0 or x == w - 1: return TRIM
+        return noise(ROBE, -8 * ((x + y) % 3 == 0))
+    for r in faces(16, 16, 8, 12, 4).values():
+        paint(r, lambda x, y, w, h: GOLD if y in (6, 7) else robe(x, y, w, h))
+    paint(faces(16, 32, 8, 12, 4)["front"], lambda x, y, w, h: noise(HAIR, -6 * ((x + y) % 2)) if y < 5 and 2 <= x <= 5 + (y < 3) else None)
+    for u, v in ((40, 16), (32, 48)):
+        for r in faces(u, v, 4, 12, 4).values():
+            paint(r, lambda x, y, w, h: SKIN if y >= h - 2 else (TRIM if y == h - 3 else ROBE))
+    for u, v in ((0, 16), (16, 48)):
+        for r in faces(u, v, 4, 12, 4).values():
+            paint(r, lambda x, y, w, h: GOLD if y == h - 1 else (TRIM if y == h - 2 else robe(x, y, w, h)))
     return img
 
 
@@ -117,13 +183,14 @@ def pack_icon():
 
 
 save(cloud(), RP / "textures/blocks/agartha_cloud.png")
-save(runestone(), RP / "textures/blocks/agartha_runestone.png")
-save(runestone(True), RP / "textures/blocks/agartha_runestone_top.png")
 save(portal_frames(), RP / "textures/blocks/agartha_portal.png")
+save(gate_keystone(), RP / "textures/items/gate_keystone.png")
 save(jarl_axe(), RP / "textures/items/jarl_axe.png")
 save(mead_horn(), RP / "textures/items/mead_horn.png")
 save(snowflake(), RP / "textures/particle/agartha_snowflake.png")
 save(aurora(), RP / "textures/particle/agartha_aurora.png")
+save(mist(), RP / "textures/particle/agartha_mist.png")
+save(allfather_skin(), RP / "textures/entity/allfather.png")
 icon = pack_icon()
 save(icon, RP / "pack_icon.png")
 save(icon, BP / "pack_icon.png")

@@ -274,8 +274,8 @@ function greatHall(c) {
     lanternPost(c, 9, z);
   }
 
-  // Return runestone and the hall's supply chests.
-  c.put(-7, G, 10, "agartha:runestone");
+  // Light and the hall's supply chests.
+  c.put(-7, G, 10, "minecraft:sea_lantern");
   chest(c, -8, G, 26, "east", "agartha/great_hall");
   chest(c, 8, G, 26, "west", "agartha/great_hall");
 }
@@ -334,7 +334,7 @@ function courtyard(c) {
 function terraceStairs(c) {
   // Landing at the top, then a grand stair down the terrace's south cliff.
   c.box(-6, SURF, 44, 6, SURF, 60, "minecraft:stone_bricks");
-  c.put(3, G, 50, "agartha:runestone");
+  c.put(3, G, 50, "minecraft:sea_lantern");
   for (let i = 1; i <= SURF - B; i++) {
     const z = 60 + i;
     const y = SURF - i + 1;
@@ -371,7 +371,7 @@ function vault(c) {
   c.put(vx + 3, floorY + 1, vz - 5, "minecraft:gold_block");
   c.put(vx - 1, floorY + 1, vz - 6, "minecraft:raw_gold_block");
   c.put(vx + 1, floorY + 1, vz - 6, "minecraft:emerald_block");
-  c.put(vx - 4, floorY + 1, vz + 2, "agartha:runestone");
+  c.put(vx - 4, floorY + 1, vz + 2, "minecraft:sea_lantern");
   c.put(vx + 5, floorY + 1, vz, "minecraft:lantern", { hanging: false });
   c.put(vx - 5, floorY + 1, vz, "minecraft:lantern", { hanging: false });
 }

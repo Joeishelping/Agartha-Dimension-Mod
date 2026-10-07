@@ -4,7 +4,7 @@
     "description": {
       "identifier": "agartha:aurora",
       "basic_render_parameters": {
-        "material": "particles_add",
+        "material": "particles_blend",
         "texture": "textures/particle/agartha_aurora"
       }
     },
@@ -13,36 +13,70 @@
         "type": "catmull_rom",
         "input": "variable.particle_age / variable.particle_lifetime",
         "horizontal_range": 1,
-        "nodes": [0, 0, 0.8, 0.8, 0, 0]
+        "nodes": [
+          0,
+          0,
+          0.8,
+          0.8,
+          0,
+          0
+        ]
       }
     },
     "components": {
       "minecraft:emitter_initialization": {
         "creation_expression": "variable.phase = math.random(0, 360); variable.hue = math.random(0, 1);"
       },
-      "minecraft:emitter_rate_steady": { "spawn_rate": 30, "max_particles": 220 },
-      "minecraft:emitter_lifetime_once": { "active_time": 4 },
+      "minecraft:emitter_rate_steady": {
+        "spawn_rate": 45,
+        "max_particles": 400
+      },
+      "minecraft:emitter_lifetime_once": {
+        "active_time": 5
+      },
       "minecraft:emitter_shape_custom": {
         "offset": [
-          "(variable.particle_random_1 - 0.5) * 140",
-          "math.sin(variable.particle_random_1 * 900 + variable.phase) * 6",
-          "math.sin(variable.particle_random_1 * 540 + variable.phase) * 22"
+          "(variable.particle_random_1 - 0.5) * 180",
+          "math.sin(variable.particle_random_1 * 900 + variable.phase) * 8",
+          "math.sin(variable.particle_random_1 * 540 + variable.phase) * 26"
         ]
       },
-      "minecraft:particle_lifetime_expression": { "max_lifetime": "7 + variable.particle_random_2 * 3" },
+      "minecraft:particle_lifetime_expression": {
+        "max_lifetime": "10 + variable.particle_random_2 * 4"
+      },
       "minecraft:particle_initial_speed": 0,
-      "minecraft:particle_motion_dynamic": { "linear_acceleration": [0.15, 0, 0.05] },
+      "minecraft:particle_motion_dynamic": {
+        "linear_acceleration": [
+          0.15,
+          0,
+          0.05
+        ]
+      },
       "minecraft:particle_appearance_billboard": {
-        "size": [2.6, "14 + variable.particle_random_3 * 10"],
+        "size": [
+          3.2,
+          "18 + variable.particle_random_3 * 14"
+        ],
         "facing_camera_mode": "lookat_y",
-        "uv": { "texture_width": 8, "texture_height": 32, "uv": [0, 0], "uv_size": [8, 32] }
+        "uv": {
+          "texture_width": 8,
+          "texture_height": 64,
+          "uv": [
+            0,
+            0
+          ],
+          "uv_size": [
+            8,
+            64
+          ]
+        }
       },
       "minecraft:particle_appearance_tinting": {
         "color": [
-          "0.15 + variable.hue * 0.45",
-          "0.95 - variable.hue * 0.35",
-          "0.75 + variable.hue * 0.25",
-          "variable.fade * 0.55"
+          1,
+          1,
+          "0.9 + variable.hue * 0.1",
+          "variable.fade * 0.7"
         ]
       }
     }

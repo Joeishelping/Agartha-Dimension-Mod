@@ -6,7 +6,7 @@ import { tileOps } from "../behavior_pack/scripts/blueprint.js";
 
 const out = process.argv[2] ?? "dist/preview";
 mkdirSync(out, { recursive: true });
-const X0 = -320, Z0 = -320, W = 640, Y0 = REALM.clearFromY, H = REALM.clearToY - Y0 + 1;
+const X0 = -352, Z0 = -352, W = 704, Y0 = REALM.clearFromY, H = REALM.clearToY - Y0 + 1;
 const vox = new Uint8Array(W * W * H);
 const idx = (x, y, z) => ((x - X0) * W + (z - Z0)) * H + (y - Y0);
 const palette = [null];
@@ -133,12 +133,14 @@ function render(name, cam, look, w = 1200, h = 675, fov = 75, night = false) {
   }
   writePPM(name, w, h, px);
 }
-const A = [0.5, B + 3.6, 188];
-render("arrival", A, [0, B + 22, 60]);
-render("aerial_south", [0, 300, 330], [0, B + 10, -20], 1200, 675, 70);
-render("aerial_east", [330, 270, 40], [-20, B + 10, -40], 1200, 675, 70);
+const A = [0.5, B + 3.6, 186];
+render("arrival", A, [0, B + 26, 60]);
+render("aerial_south", [0, 305, 345], [0, B + 10, -30], 1200, 675, 70);
+render("aerial_east", [330, 275, 40], [-20, B + 15, -60], 1200, 675, 70);
+render("aerial_west", [-330, 280, 60], [10, B + 20, -60], 1200, 675, 70);
+render("north_valley", [-70, B + 30, -40], [-95, B + 50, -170], 1200, 675, 75);
+render("pole", [30, B + 20, 40], [0, B + 60, -5], 1200, 675, 75);
 render("temple", [0, B + 12, -20], [0, B + 30, -110], 1200, 675, 75);
-render("village", [40, B + 25, 150], [110, B + 5, 70], 1200, 675, 75);
+render("icefall", [260, 190, 40], [190, 160, -8], 1200, 675, 75);
 render("night", A, [0, B + 40, 60], 1200, 675, 80, true);
-render("return_portal", [0.5, B + 4, 170], [0.5, B + 4, 190], 1000, 560, 75);
 console.log("rendered in", (Date.now() - t0) / 1000, "s");

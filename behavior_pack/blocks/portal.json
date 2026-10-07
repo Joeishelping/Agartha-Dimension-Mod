@@ -3,18 +3,27 @@
   "minecraft:block": {
     "description": {
       "identifier": "agartha:portal",
-      "menu_category": { "category": "construction" }
+      "menu_category": {
+        "category": "none"
+      }
     },
     "components": {
       "minecraft:geometry": "minecraft:geometry.full_block",
       "minecraft:material_instances": {
-        "*": { "texture": "agartha_portal", "render_method": "blend" }
+        "*": {
+          "texture": "agartha_portal",
+          "render_method": "blend"
+        }
       },
       "minecraft:collision_box": false,
       "minecraft:light_emission": 15,
       "minecraft:light_dampening": 0,
-      "minecraft:destructible_by_mining": false,
-      "minecraft:destructible_by_explosion": false,
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 2
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 20
+      },
       "minecraft:map_color": "#8FD8FF",
       "minecraft:display_name": "tile.agartha:portal.name"
     }

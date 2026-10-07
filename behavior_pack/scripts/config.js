@@ -23,10 +23,10 @@ export const REALM = {
   // Anything that drops below this height inside the pocket dies instantly.
   killY: 104,
 
-  // The pocket is built in 5x5 tiles of 128x128 blocks (8x8 chunks each), so a
-  // single ticking area (<= 100 chunks) can load one tile at a time.
-  tileSize: 128,
-  tileRange: 2,
+  // The pocket is built in 11x11 tiles of 64x64 blocks (4x4 chunks each):
+  // small enough to load quickly around a hovering player or a ticking area.
+  tileSize: 64,
+  tileRange: 5,
 
   // Vertical slice owned by the pocket. Everything from clearFromY up to the
   // build limit inside the region is wiped once before building.
@@ -34,7 +34,7 @@ export const REALM = {
   clearToY: 319,
 
   // Bump to force a rebuild on worlds that already have an older realm.
-  buildVersion: 2,
+  buildVersion: 3,
 
   // Where souls arrive: the plaza before Heaven's Gate (relative coords).
   arrival: { x: 0.5, z: 176.5 },
@@ -77,7 +77,8 @@ export function listTiles() {
       });
     }
   }
-  tiles.sort((a, b) => (Math.abs(a.i) + Math.abs(a.j)) - (Math.abs(b.i) + Math.abs(b.j)));
+  // Serpentine order, so a player flown over the site moves only one tile at a time.
+  tiles.sort((a, b) => (a.j - b.j) || ((a.j % 2 === 0 ? 1 : -1) * (a.i - b.i)));
   return tiles;
 }
 
@@ -85,6 +86,6 @@ export const IDS = {
   axe: "agartha:jarl_axe",
   mead: "agartha:mead_horn",
   cloud: "agartha:cloud",
-  runestone: "agartha:runestone",
+  keystone: "agartha:gate_keystone",
   portal: "agartha:portal",
 };

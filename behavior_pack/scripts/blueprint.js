@@ -12,7 +12,7 @@ import { forest, wildlife } from "./nature.js";
 
 export { islandColumn };
 
-const STRATA = ["minecraft:calcite", "minecraft:stone", "minecraft:packed_ice", "minecraft:calcite"];
+const STRATA = ["minecraft:calcite", "minecraft:packed_ice", "minecraft:calcite", "minecraft:stone"];
 
 function terrain(c) {
   const t = c.tile;
@@ -24,6 +24,13 @@ function terrain(c) {
       // Ice underside (all of the hanging spikes are ice).
       const iceTop = Math.min(top - 1, Math.max(bottom + 3, B - 58));
       c.fill(x, bottom, z, x, iceTop, z, "minecraft:packed_ice");
+      if (col.river || col.glacier) {
+        if (top - 4 > iceTop) c.fill(x, iceTop + 1, z, x, top - 4, z, "minecraft:stone");
+        c.fill(x, Math.max(iceTop + 1, top - 3), z, x, top - 1, z, "minecraft:packed_ice");
+        const crev = Math.abs(fbm(x / 7, z / 7, 23, 2) - 0.5) < 0.03;
+        c.set(x, top, z, crev ? "minecraft:blue_ice" : col.glacier && hash2(x, z, 24) < 0.25 ? "minecraft:snow" : col.glacier ? "minecraft:packed_ice" : "minecraft:blue_ice");
+        continue;
+      }
       if (col.lake) {
         if (top - 3 > iceTop) c.fill(x, iceTop + 1, z, x, top - 3, z, "minecraft:stone");
         let surface = "minecraft:packed_ice";
@@ -41,21 +48,24 @@ function terrain(c) {
         lowNeighbor = Math.min(lowNeighbor, n ? n.top : iceTop);
       }
       const faceFrom = Math.max(iceTop + 1, lowNeighbor - 1);
-      const coreTop = Math.min(top - 4, faceFrom - 1);
+      // Steep faces show continuous strata right up to the top; gentle slopes keep a snow cap.
+      const strataTop = steep ? top - 1 : top - 4;
+      const coreTop = Math.min(strataTop, faceFrom - 1);
       if (coreTop > iceTop) c.fill(x, iceTop + 1, z, x, coreTop, z, "minecraft:stone");
       const off = Math.floor(fbm(x / 30, z / 30, 19) * 12);
-      for (let y = Math.max(iceTop + 1, coreTop + 1); y <= top - 4; ) {
+      for (let y = Math.max(iceTop + 1, coreTop + 1); y <= strataTop; ) {
         const band = Math.floor((y + off) / 5);
-        const end = Math.min(top - 4, band * 5 + 4 - off);
+        const end = Math.min(strataTop, band * 5 + 4 - off);
         c.fill(x, y, z, x, end, z, STRATA[band & 3]);
         y = end + 1;
       }
-      let cap = "minecraft:snow";
       if (steep) {
-        const h = hash2(x, z, 31);
-        cap = h < 0.4 ? "minecraft:stone" : h < 0.75 ? "minecraft:calcite" : "minecraft:packed_ice";
+        // Snow clings to ledges; the steepest faces stay bare.
+        const band = Math.floor((top + off) / 5);
+        c.set(x, top, z, slopeAt(x, z) <= 5 ? "minecraft:snow" : STRATA[band & 3]);
+      } else {
+        c.fill(x, Math.max(iceTop + 1, top - 3), z, x, top, z, "minecraft:snow");
       }
-      c.fill(x, Math.max(iceTop + 1, top - 3), z, x, top, z, cap);
       if (!steep && !col.padded && hash2(x, z, 32) < 0.12) {
         c.set(x, top + 1, z, "minecraft:snow_layer", { height: hash2(x, z, 33) < 0.6 ? 0 : 1 });
       }
@@ -78,6 +88,16 @@ function clouds(c) {
         const th = Math.min(7, 1 + Math.floor((n - thr) * 18));
         const base = REALM.cloudBaseY + Math.floor(fbm(x / 40, z / 40, 12) * 4);
         c.fill(x, base - Math.floor(th / 2), z, x, base + th - 1, z, "agartha:cloud", undefined, "keep");
+      }
+      // Cloud belts drifting between the mountain peaks.
+      const col = islandColumn(x, z);
+      if (z < -110 || (d > 130 && z < 20)) {
+        const m = fbm(x / 24, z / 24, 27, 3);
+        const beltY = 258 + Math.floor(fbm(x / 50, z / 50, 28) * 14);
+        if (m > 0.58 && (!col || col.top < beltY + 2)) {
+          const th = 1 + Math.floor((m - 0.58) * 22);
+          c.fill(x, beltY, z, x, beltY + th, z, "agartha:cloud", undefined, "keep");
+        }
       }
       // Drifting cloud banks at island height, just beyond the edge.
       if (d > edgeRadius(x, z) + 10) {

@@ -1,0 +1,127 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.agartha.allfather.idle": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "math.sin(query.life_time * 40) * 1.2",
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "math.sin(query.life_time * 50) * 3",
+            0,
+            "3 + math.sin(query.life_time * 40) * 2"
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-math.sin(query.life_time * 50) * 3",
+            0,
+            "-3 - math.sin(query.life_time * 40) * 2"
+          ]
+        }
+      }
+    },
+    "animation.agartha.allfather.welcome": {
+      "animation_length": 4.0,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.8": [
+              -25,
+              0,
+              115
+            ],
+            "3.2": [
+              -25,
+              0,
+              115
+            ],
+            "4.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.8": [
+              -25,
+              0,
+              -115
+            ],
+            "3.2": [
+              -25,
+              0,
+              -115
+            ],
+            "4.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "head": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "1.0": [
+              -12,
+              0,
+              0
+            ],
+            "1.6": [
+              12,
+              0,
+              0
+            ],
+            "2.4": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "body": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "1.6": [
+              6,
+              0,
+              0
+            ],
+            "2.6": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    }
+  }
+}

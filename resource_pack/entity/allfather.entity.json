@@ -1,0 +1,17 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "agartha:allfather",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/allfather" },
+      "geometry": { "default": "geometry.agartha.allfather" },
+      "animations": {
+        "look_at_target": "animation.common.look_at_target",
+        "idle": "animation.agartha.allfather.idle"
+      },
+      "scripts": { "animate": ["look_at_target", "idle"] },
+      "render_controllers": ["controller.render.default"]
+    }
+  }
+}

@@ -12,7 +12,7 @@ const counts = {};
 const ids = new Set();
 let total = 0;
 const tiles = listTiles();
-check(tiles.length === 25, "25 tiles");
+check(tiles.length === (2 * REALM.tileRange + 1) ** 2, "tile grid");
 for (const tile of tiles) {
   check((REALM.originX + tile.minX) % 16 === 0 && (REALM.originZ + tile.minZ) % 16 === 0, "tile chunk aligned");
   check(((tile.maxX - tile.minX + 1) / 16) * ((tile.maxZ - tile.minZ + 1) / 16) <= 100, "ticking area <= 100 chunks");

@@ -1,36 +1,51 @@
-// Agartha - the frozen Viking heaven of this world, for Minecraft Bedrock.
+// Agartha - the frozen Hyperborean heaven of this world, for Minecraft Bedrock.
 //
-//  * One portal: the Gate of Agartha (agartha:portal) is built in the mortal
-//    world. Walking into it takes you to Agartha; the return portal or a
-//    Runestone there brings you back to the spot you stepped in from.
-//    Only one Gate may exist; portal blocks placed elsewhere are refused.
-//  * Falling through the clouds below Agartha is instant death (you respawn
-//    normally in the mortal world).
-//  * The realm is built once inside a reserved pocket of the Overworld sky
-//    (see config.js). Nothing outside that pocket is ever modified.
+//  * Forging: an operator runs /scriptevent agartha:forge. They are flown
+//    over the site in spectator mode while it builds (so the chunks load),
+//    then returned home and handed the Keystone of the Heavenly Gate.
+//  * One entrance: using the Keystone raises the Heavenly Gate in the mortal
+//    world. Walking through it takes you to Agartha.
+//  * One exit: the return portal behind the arrival plaza brings you back to
+//    the spot you stepped into the Gate from.
+//  * The All-Father greets every arrival at the Gates of Agartha.
+//  * Every block in Agartha can be broken. The exit portal mends itself so
+//    nobody is ever trapped. Falling through the clouds is instant death.
+//  * The realm lives inside a reserved pocket of the Overworld sky
+//    (see config.js). Nothing outside that pocket is modified, except the
+//    Gate you raise yourself.
 //
 // Operator commands (/scriptevent):
-//   agartha:forge              build the realm now
-//   agartha:rebuild            rebuild the realm from scratch
-//   agartha:visit              travel there yourself
-//   agartha:portal_reset       forget the Gate's location (to build a new one)
+//   agartha:forge        forge (or finish forging) the realm, in person
+//   agartha:rebuild      rebuild the realm from scratch
+//   agartha:keystone     receive the Keystone again (only if no Gate stands)
+//   agartha:gate_reset   forget the Gate so a new one can be raised
 
-import { world, system, GameMode, EquipmentSlot } from "@minecraft/server";
+import { world, system, GameMode, EquipmentSlot, ItemStack } from "@minecraft/server";
 import { REALM, REGION, B, IDS } from "./config.js";
+import { LAYOUT } from "./terrain.js";
 import { ensureRealmBuilt, isRealmBuilt, isRealmBuilding, markRealmUnbuilt } from "./builder.js";
+import { buildGate } from "./gate.js";
 
 const TAG = "agartha_in_realm";
 const RETURN_KEY = "agartha:return";
-const PORTAL_KEY = "agartha:portal";
-const PORTAL_CLUSTER = 12; // portal blocks within this range belong to the one Gate
+const GATE_KEY = "agartha:gate";
+const FORGER_KEY = "agartha:forger_restore";
 const FOG_ID = "agartha:heaven_fog";
 const FOG_USER = "agartha_realm";
+const ALLFATHER = "agartha:allfather";
 const ARRIVAL_GRACE_TICKS = 60;
 const TRAVEL_COOLDOWN_TICKS = 40;
 
 const lastTravel = new Map();
 const arrivedAt = new Map();
 const lastSafe = new Map();
+
+const WELCOMES = [
+  ["Welcome home, my child.", "You did well."],
+  ["At last you have come home.", "Rest now. You did well, my child."],
+  ["The long road is behind you.", "Welcome to Agartha. You have earned your place here."],
+  ["I have watched over you, child.", "Welcome home. You did well."],
+];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -59,9 +74,9 @@ function readJson(v) {
   }
 }
 
-/** The single Gate in the mortal world: { x, y, z, dim } or null. */
+/** The Heavenly Gate in the mortal world: { x, y, z, dim, axis, portal } or null. */
 function gate() {
-  return readJson(world.getDynamicProperty(PORTAL_KEY));
+  return readJson(world.getDynamicProperty(GATE_KEY));
 }
 
 function blockAt(dim, loc) {
@@ -85,8 +100,12 @@ function run(player, cmd) {
   }
 }
 
+function abs(x, y, z) {
+  return { x: REALM.originX + x, y, z: REALM.originZ + z };
+}
+
 function arrivalLocation() {
-  return { x: REALM.originX + REALM.arrival.x, y: B + 1, z: REALM.originZ + REALM.arrival.z };
+  return abs(REALM.arrival.x, B + 1, REALM.arrival.z);
 }
 
 function applyRealmAtmosphere(player) {
@@ -109,46 +128,122 @@ function canTravel(player) {
   return true;
 }
 
+function giveKeystone(player) {
+  const inv = player.getComponent("minecraft:inventory")?.container;
+  const left = inv?.addItem(new ItemStack(IDS.keystone, 1));
+  if (left || !inv) player.dimension.spawnItem(new ItemStack(IDS.keystone, 1), player.location);
+}
+
 // ---------------------------------------------------------------------------
-// Forging the realm
+// Forging the realm (in person)
 // ---------------------------------------------------------------------------
 
-let lastBroadcast = -1;
-
-function forge(onReady, requester) {
-  if (!isRealmBuilt() && !isRealmBuilding()) {
-    world.sendMessage("§bAgartha is being forged in the heavens... §7(one time only; this can take a few minutes)");
-    lastBroadcast = -1;
+function restoreForger(player) {
+  const saved = readJson(player.getDynamicProperty(FORGER_KEY));
+  if (!saved) return;
+  player.setDynamicProperty(FORGER_KEY, undefined);
+  try {
+    player.setGameMode(saved.mode);
+    player.teleport({ x: saved.x, y: saved.y, z: saved.z }, { dimension: world.getDimension(saved.dim) });
+  } catch (e) {
+    console.warn(`[Agartha] could not restore forger: ${e}`);
   }
+}
+
+function forge(player) {
+  if (isRealmBuilt()) {
+    player?.sendMessage("§7Agartha is already forged.");
+    return;
+  }
+  if (isRealmBuilding()) {
+    player?.sendMessage("§7Agartha is already being forged.");
+    return;
+  }
+  if (player) {
+    const l = player.location;
+    player.setDynamicProperty(FORGER_KEY, JSON.stringify({ mode: player.getGameMode(), x: l.x, y: l.y, z: l.z, dim: player.dimension.id }));
+    player.setGameMode(GameMode.Spectator);
+    player.sendMessage("§bYou rise to forge Agartha. §7You will be carried over the site while it is built; stay in the game. When it is done you will be returned here.");
+  }
+  world.sendMessage("§bAgartha is being forged in the heavens...");
+  let lastStep = -1;
   ensureRealmBuilt(
     () => {
-      if (lastBroadcast !== 100) world.sendMessage("§bThe Gates of Agartha stand open.");
-      lastBroadcast = 100;
-      onReady?.();
+      world.sendMessage("§bAgartha is forged. §7The Heavenly Gate awaits its keystone.");
+      if (player?.isValid) {
+        restoreForger(player);
+        if (!gate()) {
+          giveKeystone(player);
+          player.sendMessage("§6You receive the Keystone of the Heavenly Gate. §7Use it on the ground where the one entrance to Agartha shall stand.");
+        }
+      }
     },
     (pct) => {
-      const step = Math.floor(pct / 25) * 25;
-      if (step > lastBroadcast && step < 100) {
-        lastBroadcast = step;
+      if (player?.isValid) player.onScreenDisplay.setActionBar(`§bForging Agartha... §f${pct}%`);
+      const step = Math.floor(pct / 10) * 10;
+      if (step > lastStep) {
+        lastStep = step;
         world.sendMessage(`§7Forging Agartha... §f${step}%`);
       }
-      if (requester?.isValid) requester.onScreenDisplay.setActionBar(`§bForging Agartha... §f${pct}%`);
     },
-    (err) => world.sendMessage(`§cAgartha could not be forged: ${err}`)
+    (err) => {
+      world.sendMessage(`§cThe forging paused: ${err}`);
+      if (player?.isValid) restoreForger(player);
+    },
+    player
   );
+}
+
+// ---------------------------------------------------------------------------
+// The Heavenly Gate (the one entrance)
+// ---------------------------------------------------------------------------
+
+function raiseGate(player, block) {
+  if (gate()) {
+    const g = gate();
+    player.sendMessage(`§cThe Heavenly Gate already stands at ${g.x} ${g.y} ${g.z}.`);
+    return;
+  }
+  if (!isRealmBuilt()) {
+    player.sendMessage("§cAgartha must be forged before its Gate can be raised.");
+    return;
+  }
+  if (overRealmFootprint(player)) {
+    player.sendMessage("§cThe Gate must stand in the mortal world.");
+    return;
+  }
+  const v = player.getViewDirection();
+  const axis = Math.abs(v.x) > Math.abs(v.z) ? "x" : "z"; // the portal faces the player
+  const base = { x: block.location.x, y: block.location.y + 1, z: block.location.z };
+  const portal = buildGate(player.dimension, base, axis);
+  world.setDynamicProperty(GATE_KEY, JSON.stringify({ ...base, dim: player.dimension.id, axis, portal }));
+  const equip = player.getComponent("minecraft:equippable");
+  const held = equip?.getEquipment(EquipmentSlot.Mainhand);
+  if (held?.typeId === IDS.keystone) equip.setEquipment(EquipmentSlot.Mainhand, undefined);
+  player.playSound("beacon.activate");
+  try {
+    player.dimension.spawnParticle("agartha:holy_motes", { x: base.x + 0.5, y: base.y + 3, z: base.z + 0.5 });
+  } catch {
+    // cosmetic
+  }
+  world.sendMessage("§6The Heavenly Gate has been raised. §7It is the one way into Agartha.");
+}
+
+function gatePortalRemains(g) {
+  const dim = world.getDimension(g.dim);
+  let unknown = false;
+  for (const p of g.portal ?? []) {
+    const b = blockAt(dim, p);
+    if (!b) unknown = true;
+    else if (b.typeId === IDS.portal) return true;
+  }
+  return unknown;
 }
 
 // ---------------------------------------------------------------------------
 // Travel
 // ---------------------------------------------------------------------------
 
-function enterRealm(player, from) {
-  forge(() => {
-    if (player.isValid) teleportIn(player, from);
-  }, player);
-}
-
-/** from: where to send the player back to ({ x, y, z, dim, face? }). */
 function teleportIn(player, from) {
   if (!player.hasTag(TAG) && !overRealmFootprint(player)) {
     const l = player.location;
@@ -156,7 +251,7 @@ function teleportIn(player, from) {
   }
   player.teleport(arrivalLocation(), {
     dimension: world.getDimension("overworld"),
-    facingLocation: { x: REALM.originX + 0.5, y: B + 30, z: REALM.originZ + 60 },
+    facingLocation: abs(0.5, B + 30, 60),
   });
   player.addTag(TAG);
   arrivedAt.set(player.id, system.currentTick);
@@ -165,14 +260,58 @@ function teleportIn(player, from) {
   system.runTimeout(() => {
     if (!player.isValid) return;
     applyRealmAtmosphere(player);
-    player.onScreenDisplay.setTitle("§bAgartha", {
-      subtitle: "§fthe frozen heaven",
+    player.onScreenDisplay.setTitle("§fAgartha", {
+      subtitle: "§bthe Heavenly Gates",
       fadeInDuration: 20,
-      stayDuration: 80,
+      stayDuration: 70,
       fadeOutDuration: 30,
     });
     player.playSound("beacon.activate");
   }, 5);
+  system.runTimeout(() => welcome(player), 50);
+}
+
+/** The All-Father stands before Heaven's Gate; make sure he is there. */
+function allFather() {
+  const dim = world.getDimension("overworld");
+  const at = abs(LAYOUT.allFather.x + 0.5, B + 1, LAYOUT.allFather.z + 0.5);
+  let found;
+  try {
+    found = dim.getEntities({ type: ALLFATHER, location: at, maxDistance: 40 });
+  } catch {
+    return undefined;
+  }
+  if (found.length) {
+    for (const extra of found.slice(1)) extra.remove();
+    return found[0];
+  }
+  try {
+    return dim.spawnEntity(ALLFATHER, at);
+  } catch {
+    return undefined;
+  }
+}
+
+function welcome(player) {
+  if (!player.isValid || !player.hasTag(TAG)) return;
+  const af = allFather();
+  if (af) {
+    try {
+      af.teleport(af.location, { facingLocation: player.location });
+      af.playAnimation("animation.agartha.allfather.welcome", { blendOutTime: 0.4 });
+      af.dimension.spawnParticle("agartha:holy_motes", { x: af.location.x, y: af.location.y + 3, z: af.location.z });
+    } catch {
+      // cosmetic
+    }
+  }
+  const [a, b] = WELCOMES[Math.floor(Math.random() * WELCOMES.length)];
+  player.playSound("random.orb", { pitch: 0.5 });
+  player.sendMessage(`§6§oThe All-Father: §r§f${a}`);
+  system.runTimeout(() => {
+    if (!player.isValid) return;
+    player.sendMessage(`§6§oThe All-Father: §r§f${b}`);
+    player.onScreenDisplay.setActionBar(`§f§o"${b}"`);
+  }, 50);
 }
 
 function leaveRealm(player) {
@@ -181,9 +320,12 @@ function leaveRealm(player) {
   player.setDynamicProperty(RETURN_KEY, undefined);
   lastTravel.set(player.id, system.currentTick);
 
-  // No remembered spot (e.g. arrived by command): step out in front of the Gate.
+  // No remembered spot: step out in front of the Gate.
   const g = gate();
-  if (!target && g) target = { x: g.x + 0.5, y: g.y, z: g.z + 2.5, dim: g.dim, face: { x: g.x + 0.5, z: g.z + 5 } };
+  if (!target && g) {
+    const front = g.axis === "z" ? { x: g.x + 0.5, z: g.z + 3.5 } : { x: g.x + 3.5, z: g.z + 0.5 };
+    target = { x: front.x, y: g.y, z: front.z, dim: g.dim, face: { x: front.x + (front.x - g.x), z: front.z + (front.z - g.z) } };
+  }
 
   let dim = world.getDimension(target?.dim ?? "minecraft:overworld");
   let loc = target ? { x: target.x, y: target.y, z: target.z } : undefined;
@@ -211,59 +353,54 @@ function leaveRealm(player) {
 /** A player stepped into a portal block. */
 function usePortal(player) {
   if (!canTravel(player)) return;
-  if (player.hasTag(TAG) && overRealmFootprint(player)) {
-    leaveRealm(player);
+  if (overRealmFootprint(player)) {
+    // The one exit.
+    if (player.hasTag(TAG)) leaveRealm(player);
     return;
   }
-  // Remember the spot just outside the Gate, facing away from it.
+  // The one entrance: only the Heavenly Gate leads to Agartha.
   const safe = lastSafe.get(player.id) ?? player.location;
+  if (!isRealmBuilt()) {
+    player.teleport(safe);
+    player.sendMessage("§7The Gate shimmers, but Agartha has not yet been forged.");
+    return;
+  }
   const pl = player.location;
   const face = { x: safe.x + (safe.x - pl.x) * 4, z: safe.z + (safe.z - pl.z) * 4 };
-  const from = { x: safe.x, y: safe.y, z: safe.z, dim: player.dimension.id, face };
-  if (!isRealmBuilt()) {
-    // Still forging: nudge them back out so they don't stand in the portal.
-    player.teleport(safe);
-    player.sendMessage("§7The Gate shimmers, but Agartha is still being forged. Try again soon.");
-  }
-  enterRealm(player, from);
+  teleportIn(player, { x: safe.x, y: safe.y, z: safe.z, dim: player.dimension.id, face });
 }
 
 // ---------------------------------------------------------------------------
 // Events
 // ---------------------------------------------------------------------------
 
-world.afterEvents.playerInteractWithBlock.subscribe(({ player, block }) => {
-  if (block?.typeId === IDS.runestone && player.hasTag(TAG) && canTravel(player)) leaveRealm(player);
+world.afterEvents.playerInteractWithBlock.subscribe(({ player, block, itemStack, isFirstEvent }) => {
+  if (isFirstEvent === false) return;
+  if (itemStack?.typeId === IDS.keystone) raiseGate(player, block);
 });
 
-// There is only one Gate of Agartha in the mortal world.
+world.afterEvents.itemUse.subscribe(({ source, itemStack }) => {
+  if (itemStack?.typeId !== IDS.keystone || gate()) return;
+  source.sendMessage("§7Use the Keystone on the ground where the Heavenly Gate shall stand.");
+});
+
+// Portal blocks only belong to the Gate and the exit.
 world.afterEvents.playerPlaceBlock.subscribe(({ player, block, dimension }) => {
   if (block.typeId !== IDS.portal) return;
-  const loc = block.location;
-  if (dimension.id === "minecraft:overworld" && overRealmFootprint({ dimension, location: loc })) return;
-  const g = gate();
-  const near = g && g.dim === dimension.id && Math.max(Math.abs(g.x - loc.x), Math.abs(g.y - loc.y), Math.abs(g.z - loc.z)) <= PORTAL_CLUSTER;
-  if (!g || near || !gateStillStands(g)) {
-    if (!near) {
-      world.setDynamicProperty(PORTAL_KEY, JSON.stringify({ x: loc.x, y: loc.y, z: loc.z, dim: dimension.id }));
-      player.sendMessage("§bThe Gate of Agartha has been founded here. §7Walk through it to reach the frozen heaven.");
-    }
-    return;
-  }
+  if (overRealmFootprint({ dimension, location: block.location })) return; // mending the exit is fine
   block.setType("minecraft:air");
-  player.sendMessage(`§cThere can be only one Gate of Agartha. §7It stands at ${g.x} ${g.y} ${g.z}. Use §f/scriptevent agartha:portal_reset§7 to move it.`);
+  player.sendMessage("§cThere is only one way into Agartha: the Heavenly Gate.");
 });
 
-/** False only if we can see the Gate's area and no portal blocks remain. */
-function gateStillStands(g) {
-  const dim = world.getDimension(g.dim);
-  if (!blockAt(dim, g)) return true; // not loaded; assume it still stands
-  for (let dx = -PORTAL_CLUSTER; dx <= PORTAL_CLUSTER; dx++)
-    for (let dy = -PORTAL_CLUSTER; dy <= PORTAL_CLUSTER; dy++)
-      for (let dz = -PORTAL_CLUSTER; dz <= PORTAL_CLUSTER; dz++)
-        if (blockAt(dim, { x: g.x + dx, y: g.y + dy, z: g.z + dz })?.typeId === IDS.portal) return true;
-  return false;
-}
+// If the Gate is torn down completely, its Keystone returns to whoever did it.
+world.afterEvents.playerBreakBlock.subscribe(({ player, brokenBlockPermutation, dimension }) => {
+  if (brokenBlockPermutation?.type?.id !== IDS.portal || overRealmFootprint({ dimension, location: player.location })) return;
+  const g = gate();
+  if (!g || g.dim !== dimension.id || gatePortalRemains(g)) return;
+  world.setDynamicProperty(GATE_KEY, undefined);
+  giveKeystone(player);
+  world.sendMessage("§7The Heavenly Gate has fallen. §6Its Keystone returns to the one who unmade it.");
+});
 
 world.afterEvents.itemCompleteUse.subscribe(({ source, itemStack }) => {
   if (itemStack?.typeId !== IDS.mead) return;
@@ -300,6 +437,7 @@ world.afterEvents.entitySpawn.subscribe(({ entity }) => {
 });
 
 world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
+  if (initialSpawn && !isRealmBuilding()) restoreForger(player);
   if (!player.hasTag(TAG)) return;
   if (initialSpawn && inRealmVolume(player)) {
     arrivedAt.set(player.id, system.currentTick);
@@ -311,33 +449,37 @@ world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
   player.setDynamicProperty(RETURN_KEY, undefined);
 });
 
-system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) => {
+system.afterEvents.scriptEventReceive.subscribe(({ id, sourceEntity }) => {
   if (!id.startsWith("agartha:")) return;
-  const reply = (m) => (sourceEntity?.typeId === "minecraft:player" ? sourceEntity.sendMessage(m) : world.sendMessage(m));
+  const player = sourceEntity?.typeId === "minecraft:player" ? sourceEntity : undefined;
+  const reply = (m) => (player ? player.sendMessage(m) : world.sendMessage(m));
   switch (id) {
     case "agartha:forge":
-      forge();
+      forge(player);
       break;
     case "agartha:rebuild":
       if (world.getAllPlayers().some((p) => p.hasTag(TAG))) {
         reply("§cEveryone must leave Agartha before it can be rebuilt.");
       } else if (!isRealmBuilding()) {
         markRealmUnbuilt();
-        forge();
+        forge(player);
       }
       break;
-    case "agartha:visit":
-      if (sourceEntity?.typeId === "minecraft:player") enterRealm(sourceEntity);
+    case "agartha:keystone":
+      if (!player) break;
+      if (gate()) reply("§cThe Heavenly Gate already stands. Tear it down (or use agartha:gate_reset) first.");
+      else if (!isRealmBuilt()) reply("§cForge Agartha first.");
+      else giveKeystone(player);
       break;
-    case "agartha:portal_reset":
-      world.setDynamicProperty(PORTAL_KEY, undefined);
-      reply("§7The Gate of Agartha has been forgotten. The next portal block placed founds a new one.");
+    case "agartha:gate_reset":
+      world.setDynamicProperty(GATE_KEY, undefined);
+      reply("§7The Heavenly Gate has been forgotten. Use §f/scriptevent agartha:keystone§7 to raise a new one.");
       break;
   }
 });
 
 // ---------------------------------------------------------------------------
-// Realm tick: kill plane, atmosphere, cleanup
+// Realm tick: portals, kill plane, atmosphere, mending the exit
 // ---------------------------------------------------------------------------
 
 function spawnFx(player, id, dx, dy, dz) {
@@ -349,11 +491,23 @@ function spawnFx(player, id, dx, dy, dz) {
   }
 }
 
+/** The exit portal can be broken, but it always mends itself. */
+function mendExit() {
+  const dim = world.getDimension("overworld");
+  const { x: rx, z: rz } = LAYOUT.returnPortal;
+  for (let x = rx - 2; x <= rx + 2; x++) {
+    for (let y = B + 1; y <= B + 6; y++) {
+      const b = blockAt(dim, abs(x, y, rz));
+      if (b && b.typeId !== IDS.portal) b.setType(IDS.portal);
+    }
+  }
+}
+
 function realmTick() {
   const tick = system.currentTick;
   let anyoneHere = false;
   for (const player of world.getAllPlayers()) {
-    if (inPortal(player)) {
+    if (player.getGameMode() !== GameMode.Spectator && inPortal(player)) {
       usePortal(player);
       continue;
     }
@@ -361,7 +515,6 @@ function realmTick() {
     if (!player.hasTag(TAG)) continue;
     const graceOver = tick - (arrivedAt.get(player.id) ?? 0) > ARRIVAL_GRACE_TICKS;
     if (!overRealmFootprint(player)) {
-      // Left by some other means (command, death elsewhere, ...).
       if (graceOver) clearRealmState(player);
       continue;
     }
@@ -378,13 +531,17 @@ function realmTick() {
     }
     if (tick % 20 === 0) spawnFx(player, "agartha:snowfall", 0, 7, 0);
     if (tick % 30 === 0) spawnFx(player, "agartha:holy_motes", 0, 0, 0);
-    if (tick % 100 === 0) {
-      // Aurora curtains drifting high overhead (they glow at night).
-      const a = Math.random() * Math.PI * 2;
-      spawnFx(player, "agartha:aurora", Math.cos(a) * 60, 70, Math.sin(a) * 60);
+    if (tick % 40 === 0) {
+      // Aurora curtains: mostly over the northern mountains, sometimes overhead.
+      const a = (Math.random() < 0.7 ? -Math.PI / 2 : 0) + (Math.random() - 0.5) * Math.PI * 1.4;
+      const d = 50 + Math.random() * 50;
+      spawnFx(player, "agartha:aurora", Math.cos(a) * d, 55 + Math.random() * 35, Math.sin(a) * d);
     }
+    if (tick % 50 === 0) spawnFx(player, "agartha:mist", (Math.random() - 0.5) * 30, -1, (Math.random() - 0.5) * 30);
     if (tick % 200 === 0) player.addEffect("night_vision", 20 * 30, { showParticles: false });
   }
+
+  if (anyoneHere && tick % 200 === 0 && !isRealmBuilding()) mendExit();
 
   // Anything else that falls through the clouds is gone too.
   if (anyoneHere && tick % 10 === 0 && !isRealmBuilding()) {
@@ -410,8 +567,4 @@ function realmTick() {
 
 world.afterEvents.worldLoad.subscribe(() => {
   system.runInterval(realmTick, 2);
-  // Forge heaven in the background so it is ready before anyone dies.
-  system.runTimeout(() => {
-    if (!isRealmBuilt()) forge();
-  }, 20 * 15);
 });

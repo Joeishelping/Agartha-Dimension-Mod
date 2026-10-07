@@ -1,9 +1,9 @@
 // The great landmarks of Agartha. Each structure has a bounding box (so it is
 // only generated for tiles it touches) and a build(canvas) function.
 
-import { LAYOUT, B, islandColumn, groundY, lakeValue, isReserved, slopeAt } from "./terrain.js";
+import { LAYOUT, B, islandColumn, groundY, lakeValue, isReserved, slopeAt, eastRiverZ, westRiverZ, glacierX } from "./terrain.js";
 import { orient, stairs, slab, pillar, lantern } from "./canvas.js";
-import { hash2, hash3 } from "./noise.js";
+import { hash2, hash3, fbm } from "./noise.js";
 import { buildCitadel, CITADEL_BOUNDS } from "./citadel.js";
 
 const Q = "minecraft:quartz_block";
@@ -79,9 +79,12 @@ function plaza(c) {
     if (Math.abs(x - px) < 6 && z < pz) continue; // keep the way north open
     lampPost(c, x, B + 1, z);
   }
-  c.set(px + 4, B + 1, pz + 4, "agartha:runestone");
-  c.set(px - 4, B + 1, pz + 4, "agartha:runestone");
+  c.set(px + 4, B + 1, pz + 4, "minecraft:sea_lantern");
+  c.set(px - 4, B + 1, pz + 4, "minecraft:sea_lantern");
   returnPortal(c);
+  // The All-Father waits before the Gates.
+  c.fill(LAYOUT.allFather.x - 2, B, LAYOUT.allFather.z - 2, LAYOUT.allFather.x + 2, B, LAYOUT.allFather.z + 2, CQ);
+  c.spawn(LAYOUT.allFather.x, B + 1, LAYOUT.allFather.z, "agartha:allfather");
 }
 
 /** Quartz-and-gold archway holding the portal back to the mortal world. */
@@ -125,6 +128,20 @@ function heavensGate(c) {
   for (let dx = -4; dx <= 4; dx++) for (let dy = -4; dy <= 4; dy++) {
     const d = Math.hypot(dx, dy);
     if (d <= 4.2) c.set(dx, B + 34 + dy, gz + 3, d < 2 ? "minecraft:glowstone" : GOLD);
+  }
+  // The golden gates themselves, thrown open toward the realm.
+  for (const sx of [-1, 1]) {
+    const x = 10 * sx;
+    for (let k = 1; k <= 11; k++) {
+      for (let y = B + 1; y <= B + 28; y++) {
+        const frame = k === 1 || k === 11 || y === B + 1 || y === B + 28 || y === B + 14;
+        const ray = (k + y) % 4 === 0 && !frame;
+        c.set(x, y, gz - k, frame ? GOLD : ray ? "minecraft:gold_block" : "minecraft:iron_bars");
+      }
+      const crest = Math.round(3 * Math.sin((k / 12) * Math.PI));
+      for (let y = B + 29; y <= B + 28 + crest; y++) c.set(x, y, gz - k, GOLD);
+    }
+    c.set(x, B + 33, gz - 6, "minecraft:sea_lantern");
   }
   // Icicles hanging from the lintel.
   for (let x = -9; x <= 9; x += 2) {
@@ -337,7 +354,7 @@ function temple(c) {
   c.fill(tx - 3, F + 1, bz - 4, tx + 3, F + 1, bz - 3, CQ);
   c.set(tx, F + 2, bz - 4, ...stairs("minecraft:quartz_stairs", "north"));
   c.fill(tx, F + 3, bz - 5, tx, F + 5, bz - 5, GOLD);
-  c.set(tx - 6, F + 1, bz + 4, "agartha:runestone");
+  c.set(tx - 6, F + 1, bz + 4, "minecraft:sea_lantern");
   c.chest(tx + 6, F + 1, bz + 4, "south", "agartha/viking_hoard");
   for (const [x, z] of [[cx1 + 2, cz1 + 2], [cx2 - 2, cz1 + 2], [cx1 + 2, cz2 - 2], [cx2 - 2, cz2 - 2]]) lampPost(c, x, F + 1, z);
 }
@@ -387,36 +404,312 @@ function spires(c) {
 
 function bridge(c) {
   const { z1, z2, half } = LAYOUT.bridge;
-  const zc = (z1 + z2) / 2;
-  const L2 = (z1 - z2) / 2;
+  const pole = LAYOUT.pole;
+  // Two arched spans: shore to the Pole island, and the Pole to the far shore.
+  bridgeSpan(c, pole.z + pole.r - 1, z1, half);
+  bridgeSpan(c, z2, pole.z - pole.r + 1, half);
+}
+
+function bridgeSpan(c, za, zb, half) {
+  const zc = (za + zb) / 2;
+  const L2 = (zb - za) / 2;
   const ice = B - 1;
   const piers = [];
-  for (let z = z2; z <= z1; z += 16) piers.push(z);
-  for (let z = z2; z <= z1; z++) {
+  for (let z = za + 10; z <= zb - 6; z += 14) piers.push(z);
+  for (let z = za; z <= zb; z++) {
     const t = (z - zc) / L2;
-    const S = Math.round((B + 1 + 9 * (1 - t * t)) * 2) / 2; // walking surface, half-block steps
+    const S = Math.round((B + 1 + 7 * (1 - t * t)) * 2) / 2; // walking surface, half-block steps
     const full = Math.floor(S);
     const top = full - 1;
     const hasSlab = S !== full;
     // Spandrels with arches between piers.
     const near = piers.reduce((m, p) => Math.min(m, Math.abs(z - p)), 99);
-    const gap = Math.max(0, Math.round(Math.sqrt(Math.max(0, 1 - ((8 - near) / 8) ** 2)) * Math.max(0, top - ice - 3)));
+    const gap = Math.max(0, Math.round(Math.sqrt(Math.max(0, 1 - ((7 - Math.min(7, near)) / 7) ** 2)) * Math.max(0, top - ice - 3)));
     const archBottom = near <= 1 ? ice - 4 : ice + 1 + gap;
-    if (archBottom <= top - 2) c.fill(-half, archBottom, z, half, top - 2, z, "minecraft:stone_bricks");
+    if (archBottom <= top - 2) c.fill(-half, archBottom, z, half, top - 2, z, QB);
     c.fill(-half, top - 1, z, half, top, z, QB);
-    c.fill(-half + 1, top, z, half - 1, top, z, z % 2 ? SQ : "minecraft:spruce_planks");
+    c.fill(-half + 1, top, z, half - 1, top, z, z % 2 ? SQ : CQ);
     c.fill(-half, top + 1, z, half, top + 6, z, "minecraft:air");
     if (hasSlab) c.fill(-half + 1, full, z, half - 1, full, z, ...slab("minecraft:quartz_slab"));
     // Railings.
     c.fill(-half, full, z, -half, full, z, QB);
     c.fill(half, full, z, half, full, z, QB);
-    if ((z - z2) % 8 === 0) {
+    if ((z - za) % 8 === 4) {
       lampPost(c, -half, full + 1, z, "minecraft:sea_lantern");
       lampPost(c, half, full + 1, z, "minecraft:sea_lantern");
     }
   }
   // Pier footings breaking through the ice.
-  for (const p of piers) c.fill(-half - 1, ice - 6, p - 2, half + 1, ice + 1, p + 2, "minecraft:stone_bricks");
+  for (const p of piers) c.fill(-half - 1, ice - 6, p - 2, half + 1, ice + 1, p + 2, PI);
+}
+
+// ---------------------------------------------------------------------------
+// The Pole: the axis of the world, rising from the heart of the frozen lake
+// ---------------------------------------------------------------------------
+
+function pole(c) {
+  const { x: px, z: pz, r } = LAYOUT.pole;
+  // Island plaza with a golden compass rose.
+  for (let dx = -r; dx <= r; dx++) {
+    for (let dz = -r; dz <= r; dz++) {
+      const d = Math.hypot(dx, dz);
+      if (d > r + 0.4) continue;
+      let id = SQ;
+      if (Math.abs(d - r) < 0.9) id = QB;
+      else if (Math.abs(d - 8) < 0.6) id = "minecraft:light_blue_concrete";
+      else if ((dx === 0 || dz === 0) && d > 4) id = GOLD;
+      else if (Math.abs(Math.abs(dx) - Math.abs(dz)) === 0 && d > 4 && d < 8) id = BI;
+      c.fill(px + dx, B - 4, pz + dz, px + dx, B, pz + dz, id);
+      c.fill(px + dx, B + 1, pz + dz, px + dx, B + 6, pz + dz, "minecraft:air");
+    }
+  }
+  // The shaft: quartz and ice, tapering to a crystal crown and a beam of light.
+  const TOP = 296;
+  for (let y = B + 1; y <= TOP; y++) {
+    const hw = y > 280 ? 1 : y > 255 ? 2 : 3;
+    const band = (y - B) % 12 === 0;
+    for (let dx = -hw; dx <= hw; dx++) {
+      for (let dz = -hw; dz <= hw; dz++) {
+        const corner = Math.abs(dx) === hw && Math.abs(dz) === hw;
+        const slit = !corner && (dx === 0 || dz === 0) && (y - B) % 12 >= 4 && (y - B) % 12 <= 8 && (Math.abs(dx) === hw || Math.abs(dz) === hw);
+        c.set(px + dx, y, pz + dz, corner ? BI : band ? CQ : slit ? GLASS : QB);
+      }
+    }
+  }
+  // Buttresses at the foot.
+  for (const [ox, oz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (let k = 0; k < 6; k++) c.fill(px + ox * (4 + k), B + 1, pz + oz * (4 + k), px + ox * (4 + k), B + 12 - k * 2, pz + oz * (4 + k), k % 2 ? PI : QB);
+  }
+  // Crystal crown and beacon.
+  for (let y = TOP + 1; y <= TOP + 10; y++) {
+    const rr = (TOP + 11 - y) / 5;
+    for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) if (Math.hypot(dx, dz) <= rr + 0.2) c.set(px + dx, y, pz + dz, y > TOP + 6 ? GLASS : BI);
+  }
+  c.fill(px - 1, TOP, pz - 1, px + 1, TOP, pz + 1, "minecraft:iron_block");
+  c.set(px, TOP + 1, pz, "minecraft:beacon");
+  for (let y = TOP + 2; y <= TOP + 10; y++) c.set(px, y, pz, GLASS);
+  // Floating golden halos around the axis.
+  for (const [hy, hr] of [[B + 40, 12], [B + 62, 10], [B + 82, 8]]) {
+    for (let dx = -hr - 1; dx <= hr + 1; dx++) {
+      for (let dz = -hr - 1; dz <= hr + 1; dz++) {
+        const d = Math.hypot(dx, dz);
+        if (Math.abs(d - hr) < 0.55) c.set(px + dx, hy, pz + dz, (dx * 7 + dz * 3) % 9 === 0 ? "minecraft:sea_lantern" : GOLD);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Icefalls: the frozen rivers and the glacier pour over the edge of the world
+// ---------------------------------------------------------------------------
+
+function findMouth(step) {
+  // Walks outward along a waterway until the land ends.
+  let last;
+  for (let k = 0; k < 260; k++) {
+    const p = step(k);
+    if (!islandColumn(p[0], p[1])) return { at: p, inner: last ?? p, k };
+    last = p;
+  }
+  return undefined;
+}
+
+const MOUTHS = [
+  { mouth: findMouth((k) => [80 + k, Math.round(eastRiverZ(80 + k))]), axis: "x", sign: 1, half: 6 },
+  { mouth: findMouth((k) => [-80 - k, Math.round(westRiverZ(-80 - k))]), axis: "x", sign: -1, half: 6 },
+  { mouth: findMouth((k) => [Math.round(glacierX(-40 - k)), -40 - k]), axis: "z", sign: -1, half: 8 },
+].filter((m) => m.mouth);
+
+function icefall(c, m) {
+  const [ix, iz] = m.mouth.inner;
+  const topY = islandColumn(ix, iz)?.top ?? B - 2;
+  for (let w = -m.half - 2; w <= m.half + 2; w++) {
+    for (let out = 0; out <= 5; out++) {
+      const x = m.axis === "x" ? ix + m.sign * (out + 1) : ix + w;
+      const z = m.axis === "x" ? iz + w : iz + m.sign * (out + 1);
+      if (islandColumn(x, z)) continue;
+      const edgeFade = Math.max(0, 1 - Math.abs(w) / (m.half + 2.5));
+      const len = Math.round((50 + 90 * fbm(x / 3, z / 3, 61)) * edgeFade * (1 - out / 7));
+      if (len < 3) continue;
+      const y0 = topY - out;
+      const y1 = Math.max(118, y0 - len);
+      const core = Math.abs(w) < m.half - 1 && out < 3;
+      c.fill(x, y1, z, x, y0, z, core ? BI : PI);
+      if (hash2(x, z, 62) < 0.15) c.set(x, Math.round((y0 + y1) / 2), z, "minecraft:sea_lantern");
+    }
+  }
+}
+
+function mouthBounds(m) {
+  const [ix, iz] = m.mouth.inner;
+  return bounds(ix - 12, ix + 12, iz - 12, iz + 12);
+}
+
+// ---------------------------------------------------------------------------
+// Rock-cut halls carved into the mountains
+// ---------------------------------------------------------------------------
+
+function rockHall(c, h) {
+  const { x: hx, z: fz, y } = h;
+  // Solid rock shell (in case the mountain is thin here), then carve.
+  c.fill(hx - 13, y - 1, fz - 28, hx + 13, y + 16, fz - 2, "minecraft:calcite");
+  c.fill(hx - 13, y + 1, fz - 1, hx + 13, y + 24, fz + 1, "minecraft:air");
+  // The facade, carved in the living rock.
+  c.fill(hx - 12, y + 1, fz - 2, hx + 12, y + 22, fz - 2, "minecraft:calcite");
+  for (let k = -10; k <= 10; k += 4) {
+    c.set(hx + k, y + 1, fz - 1, CQ);
+    c.fill(hx + k, y + 2, fz - 1, hx + k, y + 13, fz - 1, ...QP);
+    c.set(hx + k, y + 14, fz - 1, CQ);
+  }
+  c.fill(hx - 12, y + 15, fz - 1, hx + 12, y + 16, fz - 1, QB);
+  c.fill(hx - 12, y + 15, fz - 1, hx + 12, y + 15, fz - 1, CQ);
+  for (let k = 0; k < 6; k++) c.fill(hx - 11 + 2 * k, y + 17 + k, fz - 1, hx + 11 - 2 * k, y + 17 + k, fz - 1, k === 5 ? GOLD : SQ);
+  for (let dx = -1; dx <= 1; dx++) c.set(hx + dx, y + 19, fz, GOLD);
+  // Doorway.
+  c.fill(hx - 2, y + 1, fz - 2, hx + 2, y + 9, fz - 1, "minecraft:air");
+  c.fill(hx - 3, y + 10, fz - 1, hx + 3, y + 10, fz - 1, GOLD);
+  // Forecourt and steps.
+  c.fill(hx - 12, y, fz - 1, hx + 12, y, fz + 10, QB);
+  for (let k = -12; k <= 12; k += 6) lampPost(c, hx + k, y + 1, fz + 9);
+  // The great hall within.
+  c.fill(hx - 10, y + 1, fz - 27, hx + 10, y + 14, fz - 3, "minecraft:air");
+  c.fill(hx - 10, y, fz - 27, hx + 10, y, fz - 3, SQ);
+  c.fill(hx - 2, y, fz - 27, hx + 2, y, fz - 3, "minecraft:light_blue_concrete");
+  for (let z = fz - 6; z >= fz - 24; z -= 6) {
+    for (const k of [-6, 6]) {
+      c.fill(hx + k, y + 1, z, hx + k, y + 14, z, ...QP);
+      c.set(hx + k, y + 7, z, "minecraft:sea_lantern");
+    }
+    c.set(hx, y + 14, z, "minecraft:sea_lantern");
+  }
+  // Altar of the north wind at the back.
+  c.fill(hx - 4, y + 1, fz - 27, hx + 4, y + 2, fz - 25, CQ);
+  c.fill(hx - 1, y + 3, fz - 27, hx + 1, y + 9, fz - 27, BI);
+  c.set(hx, y + 10, fz - 27, "minecraft:sea_lantern");
+  c.chest(hx, y + 3, fz - 25, "south", "agartha/viking_hoard");
+  c.set(hx - 3, y + 3, fz - 26, GOLD);
+  c.set(hx + 3, y + 3, fz - 26, GOLD);
+}
+
+// ---------------------------------------------------------------------------
+// The Shrine of the Pole Star on the high summit, and its carved stairway
+// ---------------------------------------------------------------------------
+
+function summitShrine(c) {
+  const { x: sx, z: sz, y } = LAYOUT.summit;
+  for (let dx = -11; dx <= 11; dx++) {
+    for (let dz = -11; dz <= 11; dz++) {
+      const d = Math.hypot(dx, dz);
+      if (d > 11.3) continue;
+      c.set(sx + dx, y, sz + dz, d < 2 ? GOLD : Math.abs(d - 6) < 0.6 ? "minecraft:light_blue_concrete" : d > 10.4 ? QB : SQ);
+      c.fill(sx + dx, y + 1, sz + dz, sx + dx, y + 14, sz + dz, "minecraft:air");
+    }
+  }
+  for (let k = 0; k < 8; k++) {
+    const a = (k / 8) * Math.PI * 2;
+    const x = Math.round(sx + Math.cos(a) * 8.5);
+    const z = Math.round(sz + Math.sin(a) * 8.5);
+    c.set(x, y + 1, z, CQ);
+    c.fill(x, y + 2, z, x, y + 9, z, ...QP);
+    c.set(x, y + 10, z, GOLD);
+    c.set(x, y + 11, z, "minecraft:end_rod");
+  }
+  for (let dx = -10; dx <= 10; dx++) for (let dz = -10; dz <= 10; dz++) {
+    if (Math.abs(Math.hypot(dx, dz) - 8.5) < 0.6) c.set(sx + dx, y + 13, sz + dz, GOLD);
+  }
+  beacon(c, sx, y + 1, sz, null);
+  c.fill(sx - 1, y, sz - 1, sx + 1, y, sz + 1, "minecraft:diamond_block");
+  crystal(c, sx + 4, sz - 4, y + 1, 9, 1.6, 0.15, -0.15);
+  crystal(c, sx - 4, sz + 4, y + 1, 7, 1.3, -0.15, 0.15);
+}
+
+// ---------------------------------------------------------------------------
+// Pathways. A path follows the land, but never climbs more than one block per
+// step: where the land is steeper it cuts a stair into the rock (or tunnels
+// through it), and over rivers it becomes a bridge.
+// ---------------------------------------------------------------------------
+
+const PATHS = [
+  // Avenue west to the pyramids.
+  { pts: [[-12, 124], [-45, 126], [-76, 131], [-95, 126]], w: 1 },
+  { pts: [[-76, 131], [-118, 132], [-130, 74]], w: 1 },
+  { pts: [[-45, 126], [-62, 72], [-94, 44], [-102, 10], [-122, -22], [-150, -40]], w: 1 },
+  // Temple to the citadel stair.
+  { pts: [[47, -86], [72, -60], [100, -34]], w: 1 },
+  // Temple to the glacier and the western rock-cut hall.
+  { pts: [[-47, -86], [-76, -98], [-100, -112], [-126, -100]], w: 1 },
+  // Temple rear to the eastern rock-cut hall.
+  { pts: [[20, -128], [30, -129]], w: 1 },
+  // The Pilgrim's Stair: from the colossus ledge to the summit shrine.
+  { pts: [[-14, -160], [-36, -149], [-26, -172], [-53, -166], [-41, -177]], w: 1, cut: true },
+];
+
+function pathCells(pts) {
+  const cells = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, az] = pts[i];
+    const [bx, bz] = pts[i + 1];
+    const n = Math.ceil(Math.hypot(bx - ax, bz - az));
+    for (let k = i === 0 ? 0 : 1; k <= n; k++) {
+      const x = Math.round(ax + ((bx - ax) * k) / n);
+      const z = Math.round(az + ((bz - az) * k) / n);
+      const last = cells[cells.length - 1];
+      if (!last || last.x !== x || last.z !== z) cells.push({ x, z, dx: bx - ax, dz: bz - az });
+    }
+  }
+  return cells;
+}
+
+function pathFloor(x, z) {
+  const col = islandColumn(x, z);
+  if (!col) return undefined;
+  return col.lake || col.river ? B : col.top;
+}
+
+function path(c, def) {
+  const cells = pathCells(def.pts);
+  const h = cells.map((p) => pathFloor(p.x, p.z) ?? B);
+  // Never climb more than one block per step; lower (cut) where needed.
+  for (let i = 1; i < h.length; i++) h[i] = Math.min(h[i], h[i - 1] + 1);
+  for (let i = h.length - 2; i >= 0; i--) h[i] = Math.min(h[i], h[i + 1] + 1);
+  const tall = def.cut ? 5 : 4;
+  cells.forEach((p, i) => {
+    const len = Math.hypot(p.dx, p.dz) || 1;
+    const px = -p.dz / len;
+    const pz = p.dx / len;
+    const facing = Math.abs(p.dx) > Math.abs(p.dz) ? (p.dx > 0 ? "east" : "west") : (p.dz > 0 ? "south" : "north");
+    const back = { east: "west", west: "east", south: "north", north: "south" }[facing];
+    for (let o = -def.w - 1; o <= def.w + 1; o++) {
+      const x = Math.round(p.x + px * o);
+      const z = Math.round(p.z + pz * o);
+      const g = islandColumn(x, z);
+      if (!g) continue;
+      const edge = Math.abs(o) === def.w + 1;
+      const fy = h[i];
+      if (g.top < fy) c.fill(x, Math.max(g.bottom, g.top + 1), z, x, fy - 1, z, QB);
+      c.set(x, fy, z, edge ? QB : (i % 7 === 0 && o === 0) ? GOLD : SQ);
+      if (edge && g.top < fy - 1) c.set(x, fy + 1, z, QB); // parapet on causeways
+      else c.fill(x, fy + 1, z, x, fy + tall, z, "minecraft:air");
+      if (def.cut && edge) c.fill(x, fy + 2, z, x, fy + tall, z, "minecraft:air");
+      // Stairs where the path climbs.
+      if (!edge) {
+        if (i + 1 < h.length && h[i + 1] === fy + 1) c.set(x, fy + 1, z, ...stairs("minecraft:quartz_stairs", facing));
+        else if (i > 0 && h[i - 1] === fy + 1) c.set(x, fy + 1, z, ...stairs("minecraft:quartz_stairs", back));
+      }
+    }
+    if (i % 12 === 6) {
+      const x = Math.round(p.x + px * (def.w + 2));
+      const z = Math.round(p.z + pz * (def.w + 2));
+      const g = islandColumn(x, z);
+      if (g && Math.abs(g.top - h[i]) <= 1) lampPost(c, x, g.top + 1, z);
+    }
+  });
+}
+
+function pathBounds(def) {
+  const xs = def.pts.map((p) => p[0]);
+  const zs = def.pts.map((p) => p[1]);
+  return bounds(Math.min(...xs) - 6, Math.max(...xs) + 6, Math.min(...zs) - 6, Math.max(...zs) + 6);
 }
 
 // ---------------------------------------------------------------------------
@@ -534,7 +827,7 @@ function pyramid(c, p, withChamber) {
     c.chest(p.x - 1, B + 2, p.z - 2, "south", "agartha/viking_hoard");
     c.chest(p.x + 1, B + 2, p.z - 2, "south", "agartha/viking_hoard");
     c.set(p.x, B + 2, p.z - 3, GOLD);
-    c.set(p.x - 4, B + 1, p.z + 3, "agartha:runestone");
+    c.set(p.x - 4, B + 1, p.z + 3, "minecraft:sea_lantern");
   }
 }
 
@@ -672,7 +965,7 @@ function longhouse(c, hx, hz, width, length, axis, idx) {
     }
     put(0, B + 1, -hl + 2, GOLD);
     put(0, B + 2, -hl + 2, GOLD);
-    put(2, B + 1, -hl + 2, "agartha:runestone");
+    put(2, B + 1, -hl + 2, "minecraft:sea_lantern");
   }
 }
 
@@ -792,7 +1085,7 @@ const tz = L.temple.z;
 
 export const STRUCTURES = [
   { name: "plaza", bounds: bounds(-22, 22, 156, 196), build: plaza },
-  { name: "gate", bounds: bounds(-20, 20, 148, 160), build: heavensGate },
+  { name: "gate", bounds: bounds(-20, 20, 140, 160), build: heavensGate },
   { name: "avenue", bounds: bounds(-12, 12, L.avenue.z1, L.avenue.z2), build: avenue },
   { name: "bridge", bounds: bounds(-8, 8, L.bridge.z2 - 4, L.bridge.z1 + 4), build: bridge },
   { name: "temple", bounds: bounds(-44, 44, tz - 40, tz + 42), build: temple },
@@ -811,6 +1104,12 @@ export const STRUCTURES = [
   })),
   { name: "village", bounds: bounds(20, 170, 0, 150), build: village },
   { name: "citadel", bounds: CITADEL_BOUNDS, build: buildCitadel },
+  { name: "pole", bounds: bounds(L.pole.x - 18, L.pole.x + 18, L.pole.z - 18, L.pole.z + 18), build: pole },
+  ...MOUTHS.map((m, i) => ({ name: `icefall${i}`, bounds: mouthBounds(m), build: (c) => icefall(c, m) })),
+  ...L.halls.map((h, i) => ({ name: `hall${i}`, bounds: bounds(h.x - 14, h.x + 14, h.z - 30, h.z + 12), build: (c) => rockHall(c, h) })),
+  ...L.argonath.map((a, i) => ({ name: `argonath${i}`, bounds: statueBounds(a.x, a.z, 0.85), build: (c) => statue(c, a.x, B + 15, a.z, 0.85, "south") })),
+  { name: "summit", bounds: bounds(L.summit.x - 12, L.summit.x + 12, L.summit.z - 12, L.summit.z + 12), build: summitShrine },
+  ...PATHS.map((d, i) => ({ name: `path${i}`, bounds: pathBounds(d), build: (c) => path(c, d) })),
   { name: "crystals", bounds: bounds(-130, 130, -90, 200), build: crystals },
   ...ISLETS.map((it, i) => ({ name: `islet${i}`, bounds: bounds(it.x - it.r - 2, it.x + it.r + 2, it.z - it.r - 2, it.z + it.r + 2), build: (c) => islet(c, it, i) })),
 ];
