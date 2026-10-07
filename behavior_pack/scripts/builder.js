@@ -23,6 +23,16 @@ const ALIASES = {
   "minecraft:spruce_fence": [["minecraft:fence", { wood_type: "spruce" }]],
   "minecraft:light_blue_concrete": [["minecraft:concrete", { color: "light_blue" }]],
   "minecraft:spruce_slab": [["minecraft:wooden_slab", { wood_type: "spruce" }]],
+  "minecraft:quartz_slab": [["minecraft:stone_block_slab", { stone_slab_type: "quartz" }]],
+  "minecraft:quartz_pillar": [["minecraft:quartz_block", { chisel_type: "lines", pillar_axis: "y" }]],
+  "minecraft:smooth_quartz": [["minecraft:quartz_block", { chisel_type: "smooth" }]],
+  "minecraft:chiseled_quartz_block": [["minecraft:quartz_block", { chisel_type: "chiseled" }]],
+  "minecraft:light_blue_stained_glass": [["minecraft:stained_glass", { color: "light_blue" }]],
+  "minecraft:white_wool": [["minecraft:wool", { color: "white" }]],
+  "minecraft:red_wool": [["minecraft:wool", { color: "red" }]],
+  "minecraft:yellow_wool": [["minecraft:wool", { color: "yellow" }]],
+  "minecraft:blue_wool": [["minecraft:wool", { color: "blue" }]],
+  "minecraft:dark_oak_fence": [["minecraft:fence", { wood_type: "dark_oak" }]],
 };
 const STATE_ALTERNATES = {
   "minecraft:vertical_half": (v) => ({ top_slot_bit: v === "top" }),
@@ -57,11 +67,20 @@ function permutationFor(id, states) {
   return perm;
 }
 
-/** The single id used in fill commands must exist; fall back to an alias. */
-function commandBlockId(id) {
-  if (tryResolve(id, undefined)) return id;
-  for (const [aid] of ALIASES[id] ?? []) if (tryResolve(aid, undefined)) return aid;
-  return undefined;
+function stateString(states) {
+  const parts = Object.entries(states).map(([k, v]) => `"${k}"=${typeof v === "string" ? `"${v}"` : v}`);
+  return `[${parts.join(",")}]`;
+}
+
+/**
+ * The block argument for a fill command: id plus states, adjusted for the
+ * running engine version, or undefined if the block doesn't exist at all.
+ */
+function commandBlock(id, states) {
+  const perm = permutationFor(id, states);
+  if (!perm) return undefined;
+  const all = perm.getAllStates();
+  return Object.keys(all).length ? `${perm.type.id} ${stateString(all)}` : perm.type.id;
 }
 
 function overworld() {
@@ -80,7 +99,7 @@ function tileLoaded(dim, tile) {
     [tile.maxX, tile.maxZ], [(tile.minX + tile.maxX) >> 1, (tile.minZ + tile.maxZ) >> 1],
   ];
   try {
-    return pts.every(([x, z]) => dim.getBlock({ x: ox + x, y: REALM.surfaceY, z: oz + z }) !== undefined);
+    return pts.every(([x, z]) => dim.getBlock({ x: ox + x, y: REALM.baseY, z: oz + z }) !== undefined);
   } catch {
     return false;
   }
@@ -99,11 +118,20 @@ const waiters = [];
 
 /**
  * Builds the realm if needed and calls onReady() when it is safe to enter.
- * onProgress(text) is called with human-readable progress updates.
+ * onProgress(percent) is called as tiles complete.
  */
+export function isRealmBuilding() {
+  return building;
+}
+
+/** Forgets the built realm so the next ensureRealmBuilt() rebuilds it. */
+export function markRealmUnbuilt() {
+  world.setDynamicProperty(BUILT_KEY, undefined);
+}
+
 export function ensureRealmBuilt(onReady, onProgress, onError) {
   if (isRealmBuilt()) {
-    onReady();
+    onReady?.();
     return;
   }
   waiters.push({ onReady, onProgress, onError });
@@ -127,22 +155,23 @@ function* buildJob() {
   const ox = REALM.originX;
   const oz = REALM.originZ;
   const tiles = listTiles();
-  const cmdIds = new Map();
+  const cmdBlocks = new Map();
   let failures = 0;
 
-  const cmdId = (id) => {
-    if (!cmdIds.has(id)) cmdIds.set(id, commandBlockId(id));
-    return cmdIds.get(id);
+  const cmdId = (id, states) => {
+    const key = states ? `${id}|${JSON.stringify(states)}` : id;
+    if (!cmdBlocks.has(key)) cmdBlocks.set(key, commandBlock(id, states));
+    return cmdBlocks.get(key);
   };
 
   try {
     for (let t = 0; t < tiles.length; t++) {
       const tile = tiles[t];
-      notify("onProgress", `§bForging Agartha... §f${Math.round((t / tiles.length) * 100)}%`);
+      notify("onProgress", Math.round((t / tiles.length) * 100));
 
       removeTickingArea(dim);
       dim.runCommand(
-        `tickingarea add ${ox + tile.minX} ${REALM.surfaceY} ${oz + tile.minZ} ${ox + tile.maxX} ${REALM.surfaceY} ${oz + tile.maxZ} ${TICKING_AREA} true`
+        `tickingarea add ${ox + tile.minX} ${REALM.baseY} ${oz + tile.minZ} ${ox + tile.maxX} ${REALM.baseY} ${oz + tile.maxZ} ${TICKING_AREA} true`
       );
       const start = system.currentTick;
       while (!tileLoaded(dim, tile)) {
@@ -164,7 +193,7 @@ function* buildJob() {
     if (failures) console.warn(`[Agartha] Realm built with ${failures} failed operations.`);
     building = false;
     const ready = waiters.splice(0);
-    for (const w of ready) w.onReady();
+    for (const w of ready) w.onReady?.();
   } catch (e) {
     removeTickingArea(dim);
     building = false;
@@ -177,9 +206,9 @@ function* buildJob() {
 function applyOp(dim, op, ox, oz, cmdId) {
   const kind = op[0];
   if (kind === "fill") {
-    const [, x1, y1, z1, x2, y2, z2, id, mode] = op;
+    const [, x1, y1, z1, x2, y2, z2, id, mode, states] = op;
     if (!isInsideRegion(x1, y1, z1) || !isInsideRegion(x2, y2, z2)) return;
-    const block = cmdId(id);
+    const block = cmdId(id, states);
     if (!block) return;
     dim.runCommand(`fill ${ox + x1} ${y1} ${oz + z1} ${ox + x2} ${y2} ${oz + z2} ${block} ${mode ?? "replace"}`);
     return;
@@ -192,5 +221,7 @@ function applyOp(dim, op, ox, oz, cmdId) {
     if (perm) dim.getBlock(loc)?.setPermutation(perm);
   } else if (kind === "loot") {
     dim.runCommand(`loot insert ${loc.x} ${loc.y} ${loc.z} loot "${op[4]}"`);
+  } else if (kind === "spawn") {
+    dim.spawnEntity(op[4], { x: loc.x + 0.5, y: loc.y, z: loc.z + 0.5 });
   }
 }

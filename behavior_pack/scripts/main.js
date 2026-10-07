@@ -1,17 +1,26 @@
-// Agartha - a sealed, floating Viking sky-realm for Minecraft Bedrock.
+// Agartha - the frozen Viking heaven of this world, for Minecraft Bedrock.
 //
-//  * Frost Rune (crafted item): use it to travel to Agartha, use it again to
-//    go home. Runestones in the realm also send you home.
-//  * The realm is built once, on first visit, inside a reserved pocket of the
-//    Overworld sky (see config.js). Nothing outside that pocket is modified.
-//  * Fall off the island and through the clouds: instant death.
+//  * The afterlife: players who die in the mortal world awaken at the Gates of
+//    Agartha. Dying in Agartha (falling through the clouds) returns them to
+//    the mortal world at their spawn point.
+//  * Frost Rune (crafted item): travel to Agartha while alive, and back.
+//    Runestones in the realm also return you to the mortal world.
+//  * The realm is built once inside a reserved pocket of the Overworld sky
+//    (see config.js). Nothing outside that pocket is ever modified.
+//
+// Operator commands (/scriptevent):
+//   agartha:afterlife on|off   send the dead to Agartha (default: on)
+//   agartha:forge              build the realm now
+//   agartha:rebuild            rebuild the realm from scratch
+//   agartha:visit              travel there yourself
 
 import { world, system, GameMode, EquipmentSlot } from "@minecraft/server";
-import { REALM, REGION, G, IDS } from "./config.js";
-import { ensureRealmBuilt, isRealmBuilt } from "./builder.js";
+import { REALM, REGION, B, IDS } from "./config.js";
+import { ensureRealmBuilt, isRealmBuilt, isRealmBuilding, markRealmUnbuilt } from "./builder.js";
 
 const TAG = "agartha_in_realm";
 const RETURN_KEY = "agartha:return";
+const AFTERLIFE_KEY = "agartha:afterlife_off";
 const FOG_ID = "agartha:heaven_fog";
 const FOG_USER = "agartha_realm";
 const ARRIVAL_GRACE_TICKS = 60;
@@ -19,6 +28,7 @@ const TRAVEL_COOLDOWN_TICKS = 40;
 
 const lastTravel = new Map();
 const arrivedAt = new Map();
+const diedInRealm = new Map();
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -39,6 +49,10 @@ function inRealmVolume(entity) {
   return overRealmFootprint(entity) && entity.location.y > REALM.killY - 48;
 }
 
+function afterlifeEnabled() {
+  return world.getDynamicProperty(AFTERLIFE_KEY) !== true;
+}
+
 function run(player, cmd) {
   try {
     player.runCommand(cmd);
@@ -48,7 +62,7 @@ function run(player, cmd) {
 }
 
 function arrivalLocation() {
-  return { x: REALM.originX + REALM.arrival.x, y: G, z: REALM.originZ + REALM.arrival.z };
+  return { x: REALM.originX + REALM.arrival.x, y: B + 1, z: REALM.originZ + REALM.arrival.z };
 }
 
 function applyRealmAtmosphere(player) {
@@ -72,36 +86,52 @@ function canTravel(player) {
 }
 
 // ---------------------------------------------------------------------------
-// Travel
+// Forging the realm
 // ---------------------------------------------------------------------------
 
-function enterRealm(player) {
-  if (!isRealmBuilt()) {
-    player.sendMessage("§bThe Frost Rune hums... §7Agartha is being forged from the clouds for the first time. This happens only once.");
+let lastBroadcast = -1;
+
+function forge(onReady, requester) {
+  if (!isRealmBuilt() && !isRealmBuilding()) {
+    world.sendMessage("§bAgartha is being forged in the heavens... §7(one time only; this can take a few minutes)");
+    lastBroadcast = -1;
   }
   ensureRealmBuilt(
     () => {
-      if (!player.isValid) return;
-      teleportIn(player);
+      if (lastBroadcast !== 100) world.sendMessage("§bThe Gates of Agartha stand open.");
+      lastBroadcast = 100;
+      onReady?.();
     },
-    (text) => {
-      if (player.isValid) player.onScreenDisplay.setActionBar(text);
+    (pct) => {
+      const step = Math.floor(pct / 25) * 25;
+      if (step > lastBroadcast && step < 100) {
+        lastBroadcast = step;
+        world.sendMessage(`§7Forging Agartha... §f${step}%`);
+      }
+      if (requester?.isValid) requester.onScreenDisplay.setActionBar(`§bForging Agartha... §f${pct}%`);
     },
-    (err) => {
-      if (player.isValid) player.sendMessage(`§cAgartha could not be forged: ${err}`);
-    }
+    (err) => world.sendMessage(`§cAgartha could not be forged: ${err}`)
   );
 }
 
-function teleportIn(player) {
+// ---------------------------------------------------------------------------
+// Travel
+// ---------------------------------------------------------------------------
+
+function enterRealm(player, ascended = false) {
+  forge(() => {
+    if (player.isValid) teleportIn(player, ascended);
+  }, player);
+}
+
+function teleportIn(player, ascended) {
   if (!player.hasTag(TAG) && !overRealmFootprint(player)) {
     const l = player.location;
     player.setDynamicProperty(RETURN_KEY, JSON.stringify({ x: l.x, y: l.y, z: l.z, dim: player.dimension.id }));
   }
-  const overworld = world.getDimension("overworld");
   player.teleport(arrivalLocation(), {
-    dimension: overworld,
-    facingLocation: { x: REALM.originX + 0.5, y: G + 4, z: REALM.originZ + 20 },
+    dimension: world.getDimension("overworld"),
+    facingLocation: { x: REALM.originX + 0.5, y: B + 30, z: REALM.originZ + 60 },
   });
   player.addTag(TAG);
   arrivedAt.set(player.id, system.currentTick);
@@ -110,13 +140,16 @@ function teleportIn(player) {
   system.runTimeout(() => {
     if (!player.isValid) return;
     applyRealmAtmosphere(player);
-    player.onScreenDisplay.setTitle("§bAgartha", {
-      subtitle: "§fthe frozen heaven",
-      fadeInDuration: 10,
-      stayDuration: 60,
-      fadeOutDuration: 20,
+    player.onScreenDisplay.setTitle(ascended ? "§fYou have ascended" : "§bAgartha", {
+      subtitle: ascended ? "§bWelcome to Agartha, the frozen heaven" : "§fthe frozen heaven",
+      fadeInDuration: 20,
+      stayDuration: 80,
+      fadeOutDuration: 30,
     });
     player.playSound("beacon.activate");
+    if (ascended) {
+      player.sendMessage("§7Your soul has crossed into Agartha. Use a §bRunestone§7 to be reborn in the mortal world.");
+    }
   }, 5);
 }
 
@@ -196,7 +229,7 @@ world.afterEvents.entityHitEntity.subscribe(({ damagingEntity, hitEntity }) => {
   }
 });
 
-// Keep the heaven peaceful: no hostile mobs spawn inside the pocket.
+// Heaven is peaceful: no hostile mobs spawn inside the pocket.
 world.afterEvents.entitySpawn.subscribe(({ entity }) => {
   try {
     if (!entity.isValid || entity.typeId === "minecraft:player") return;
@@ -207,23 +240,75 @@ world.afterEvents.entitySpawn.subscribe(({ entity }) => {
   }
 });
 
+world.afterEvents.entityDie.subscribe(({ deadEntity }) => {
+  if (deadEntity?.typeId !== "minecraft:player") return;
+  diedInRealm.set(deadEntity.id, deadEntity.hasTag(TAG));
+});
+
 world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
-  if (!player.hasTag(TAG)) return;
-  if (!initialSpawn) {
-    // Died in the realm and respawned at home.
-    clearRealmState(player);
-    player.setDynamicProperty(RETURN_KEY, undefined);
-  } else if (inRealmVolume(player)) {
-    arrivedAt.set(player.id, system.currentTick);
-    applyRealmAtmosphere(player);
-  } else {
-    clearRealmState(player);
+  if (initialSpawn) {
+    if (!player.hasTag(TAG)) return;
+    if (inRealmVolume(player)) {
+      arrivedAt.set(player.id, system.currentTick);
+      applyRealmAtmosphere(player);
+    } else {
+      clearRealmState(player);
+    }
+    return;
+  }
+  // Respawn after death.
+  const fromRealm = diedInRealm.get(player.id) ?? player.hasTag(TAG);
+  diedInRealm.delete(player.id);
+  clearRealmState(player);
+  player.setDynamicProperty(RETURN_KEY, undefined);
+  if (fromRealm) {
+    player.onScreenDisplay.setTitle("§fReborn", { subtitle: "§7You have returned to the mortal world", fadeInDuration: 10, stayDuration: 50, fadeOutDuration: 20 });
+  } else if (afterlifeEnabled()) {
+    // The dead ascend: their respawn point becomes where they return to.
+    lastTravel.set(player.id, system.currentTick);
+    enterRealm(player, true);
+  }
+});
+
+system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) => {
+  if (!id.startsWith("agartha:")) return;
+  const reply = (m) => (sourceEntity?.typeId === "minecraft:player" ? sourceEntity.sendMessage(m) : world.sendMessage(m));
+  switch (id) {
+    case "agartha:afterlife": {
+      const off = message.trim().toLowerCase() === "off";
+      world.setDynamicProperty(AFTERLIFE_KEY, off ? true : undefined);
+      reply(off ? "§7Afterlife disabled: the dead respawn normally." : "§bAfterlife enabled: the dead ascend to Agartha.");
+      break;
+    }
+    case "agartha:forge":
+      forge();
+      break;
+    case "agartha:rebuild":
+      if (world.getAllPlayers().some((p) => p.hasTag(TAG))) {
+        reply("§cEveryone must leave Agartha before it can be rebuilt.");
+      } else if (!isRealmBuilding()) {
+        markRealmUnbuilt();
+        forge();
+      }
+      break;
+    case "agartha:visit":
+      if (sourceEntity?.typeId === "minecraft:player") enterRealm(sourceEntity);
+      break;
   }
 });
 
 // ---------------------------------------------------------------------------
 // Realm tick: kill plane, atmosphere, cleanup
 // ---------------------------------------------------------------------------
+
+function spawnFx(player, id, dx, dy, dz) {
+  try {
+    const l = player.location;
+    player.dimension.spawnParticle(id, { x: l.x + dx, y: l.y + dy, z: l.z + dz });
+  } catch {
+    // chunk not ready
+  }
+}
 
 function realmTick() {
   const tick = system.currentTick;
@@ -237,8 +322,7 @@ function realmTick() {
       continue;
     }
     anyoneHere = true;
-    const y = player.location.y;
-    if (y < REALM.killY && graceOver) {
+    if (player.location.y < REALM.killY && graceOver && !isRealmBuilding()) {
       const mode = player.getGameMode();
       if (mode === GameMode.Creative || mode === GameMode.Spectator) {
         player.teleport(arrivalLocation());
@@ -248,19 +332,18 @@ function realmTick() {
       }
       continue;
     }
-    if (tick % 20 === 0) {
-      try {
-        const l = player.location;
-        player.dimension.spawnParticle("agartha:snowfall", { x: l.x, y: l.y + 7, z: l.z });
-      } catch {
-        // chunk not ready
-      }
+    if (tick % 20 === 0) spawnFx(player, "agartha:snowfall", 0, 7, 0);
+    if (tick % 30 === 0) spawnFx(player, "agartha:holy_motes", 0, 0, 0);
+    if (tick % 100 === 0) {
+      // Aurora curtains drifting high overhead (they glow at night).
+      const a = Math.random() * Math.PI * 2;
+      spawnFx(player, "agartha:aurora", Math.cos(a) * 60, 70, Math.sin(a) * 60);
     }
     if (tick % 200 === 0) player.addEffect("night_vision", 20 * 30, { showParticles: false });
   }
 
   // Anything else that falls through the clouds is gone too.
-  if (anyoneHere && tick % 10 === 0) {
+  if (anyoneHere && tick % 10 === 0 && !isRealmBuilding()) {
     try {
       const dim = world.getDimension("overworld");
       const fallen = dim.getEntities({
@@ -283,4 +366,8 @@ function realmTick() {
 
 world.afterEvents.worldLoad.subscribe(() => {
   system.runInterval(realmTick, 2);
+  // Forge heaven in the background so it is ready before anyone dies.
+  system.runTimeout(() => {
+    if (!isRealmBuilt()) forge();
+  }, 20 * 15);
 });

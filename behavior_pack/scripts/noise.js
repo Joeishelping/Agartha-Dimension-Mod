@@ -42,3 +42,24 @@ export function fbm(x, z, seed, octaves = 3) {
   }
   return sum / norm;
 }
+
+/** Ridged fractal noise in [0, 1): sharp crests, good for mountain ranges. */
+export function ridged(x, z, seed, octaves = 4) {
+  let sum = 0;
+  let amp = 0.5;
+  let norm = 0;
+  let f = 1;
+  for (let o = 0; o < octaves; o++) {
+    const n = 1 - Math.abs(valueNoise(x * f, z * f, seed + o * 131) * 2 - 1);
+    sum += n * n * amp;
+    norm += amp;
+    amp *= 0.5;
+    f *= 2;
+  }
+  return sum / norm;
+}
+
+export function smoothstep(t) {
+  const c = Math.min(1, Math.max(0, t));
+  return c * c * (3 - 2 * c);
+}

@@ -82,6 +82,17 @@ def snowflake():
     return img
 
 
+def aurora():
+    img = Image.new("RGBA", (8, 32))
+    for y in range(32):
+        t = y / 31
+        a = int(255 * (t ** 1.6) * (1 - max(0, t - 0.9) * 10))
+        for x in range(8):
+            edge = 1 - abs(x - 3.5) / 4.5
+            img.putpixel((x, y), (255, 255, 255, max(0, int(a * edge))))
+    return img
+
+
 def pack_icon():
     img = Image.new("RGBA", (128, 128))
     for y in range(128):
@@ -105,6 +116,7 @@ save(frost_rune(), RP / "textures/items/frost_rune.png")
 save(jarl_axe(), RP / "textures/items/jarl_axe.png")
 save(mead_horn(), RP / "textures/items/mead_horn.png")
 save(snowflake(), RP / "textures/particle/agartha_snowflake.png")
+save(aurora(), RP / "textures/particle/agartha_aurora.png")
 icon = pack_icon()
 save(icon, RP / "pack_icon.png")
 save(icon, BP / "pack_icon.png")

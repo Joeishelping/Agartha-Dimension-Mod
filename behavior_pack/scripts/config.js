@@ -7,40 +7,40 @@
 
 export const REALM = {
   // World-space centre of the pocket. Must be a multiple of 16 (chunk aligned).
-  originX: 100000,
-  originZ: 100000,
+  originX: 200000,
+  originZ: 200000,
 
-  // Height of the snowfield the castle stands on.
-  surfaceY: 276,
+  // Height of the snowfield plains. Mountains rise from here to the build limit.
+  baseY: 200,
 
-  // Island footprint (relative to origin).
-  islandRadius: 58,
+  // Floating continent footprint (relative to origin).
+  islandRadius: 205,
 
-  // Sea of clouds below the island.
-  cloudBaseY: 214,
-  cloudRadius: 150,
+  // Sea of clouds below the continent.
+  cloudBaseY: 112,
+  cloudRadius: 300,
 
   // Anything that drops below this height inside the pocket dies instantly.
-  killY: 209,
+  killY: 104,
 
-  // The pocket is built in 3x3 tiles of 128x128 blocks (8x8 chunks each), so a
+  // The pocket is built in 5x5 tiles of 128x128 blocks (8x8 chunks each), so a
   // single ticking area (<= 100 chunks) can load one tile at a time.
   tileSize: 128,
-  tileRange: 1,
+  tileRange: 2,
 
   // Vertical slice owned by the pocket. Everything from clearFromY up to the
   // build limit inside the region is wiped once before building.
-  clearFromY: 200,
+  clearFromY: 96,
   clearToY: 319,
 
   // Bump to force a rebuild on worlds that already have an older realm.
-  buildVersion: 1,
+  buildVersion: 2,
 
-  // Landing pad in front of the castle gate (relative coords, y is absolute).
-  arrival: { x: 0.5, z: 48.5 },
+  // Where souls arrive: the plaza before Heaven's Gate (relative coords).
+  arrival: { x: 0.5, z: 176.5 },
 };
 
-export const G = REALM.surfaceY + 1; // first air block above the snowfield
+export const B = REALM.baseY;
 
 /** Horizontal half extent of the reserved region, in blocks. */
 export const REGION_HALF = REALM.tileSize * (REALM.tileRange + 0.5);

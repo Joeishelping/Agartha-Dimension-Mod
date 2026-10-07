@@ -1,2 +1,4 @@
 dist/
 node_modules/
+!tools/mock/node_modules/
+tools/mock/scripts/
