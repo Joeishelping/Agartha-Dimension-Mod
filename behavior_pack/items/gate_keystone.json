@@ -3,11 +3,20 @@
   "minecraft:item": {
     "description": {
       "identifier": "agartha:gate_keystone",
-      "menu_category": { "category": "none" }
+      "menu_category": {
+        "category": "items",
+        "group": "agartha:itemGroup.agartha"
+      }
     },
     "components": {
-      "minecraft:icon": { "textures": { "default": "agartha_gate_keystone" } },
-      "minecraft:display_name": { "value": "item.agartha.gate_keystone" },
+      "minecraft:icon": {
+        "textures": {
+          "default": "agartha_gate_keystone"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "item.agartha.gate_keystone"
+      },
       "minecraft:max_stack_size": 1,
       "minecraft:glint": true
     }

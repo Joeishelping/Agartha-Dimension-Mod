@@ -1,0 +1,24 @@
+{
+  "format_version": "1.21.60",
+  "minecraft:crafting_items_catalog": {
+    "categories": [
+      {
+        "category_name": "items",
+        "groups": [
+          {
+            "group_identifier": {
+              "icon": "agartha:gate_keystone",
+              "name": "agartha:itemGroup.agartha"
+            },
+            "items": [
+              "agartha:gate_keystone",
+              "agartha:jarl_axe",
+              "agartha:mead_horn",
+              "agartha:cloud"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -70,8 +70,12 @@ Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket 
 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
-## Install
-Run `./tools/package.sh` and open `dist/Agartha.mcaddon`, then activate **both** packs on your world.
+## Install & updates
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.4.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.4.0 (Behavior)** and **Agartha v1.4.0 (Resources)**.
+
+Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
+
+In the creative inventory, all Agartha items (Keystone, Jarl's Axe, Mead Horn, Agartha Cloud) sit together in one collapsible **Agartha** group under *Items*.
 
 ## Development
 | Command | Purpose |
