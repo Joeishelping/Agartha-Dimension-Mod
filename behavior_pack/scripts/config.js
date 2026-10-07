@@ -82,9 +82,9 @@ export function listTiles() {
 }
 
 export const IDS = {
-  rune: "agartha:frost_rune",
   axe: "agartha:jarl_axe",
   mead: "agartha:mead_horn",
   cloud: "agartha:cloud",
   runestone: "agartha:runestone",
+  portal: "agartha:portal",
 };

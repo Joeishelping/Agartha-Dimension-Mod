@@ -43,14 +43,21 @@ def runestone(top=False):
     return img
 
 
-def frost_rune():
-    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.polygon([(8, 1), (14, 8), (8, 15), (2, 8)], fill=(120, 200, 255, 255), outline=(40, 90, 170, 255))
-    d.polygon([(8, 3), (11, 8), (8, 6)], fill=(220, 245, 255, 255))
-    d.line((8, 5, 8, 12), fill=(255, 255, 255, 255))
-    d.line((8, 8, 6, 6), fill=(255, 255, 255, 255))
-    d.line((8, 8, 10, 6), fill=(255, 255, 255, 255))
+def portal_frames(n=8):
+    """Swirling icy portal: n stacked 16x16 frames for a flipbook texture."""
+    import math
+    img = Image.new("RGBA", (16, 16 * n))
+    for f in range(n):
+        ph = f / n * 2 * math.pi
+        for x in range(16):
+            for y in range(16):
+                dx, dy = x - 7.5, y - 7.5
+                r = math.hypot(dx, dy)
+                a = math.atan2(dy, dx)
+                s = 0.5 + 0.5 * math.sin(a * 3 + r * 0.9 - ph * 2)
+                g = 0.5 + 0.5 * math.sin(x * 0.7 + y * 0.4 + ph)
+                v = 0.55 * s + 0.45 * g
+                img.putpixel((x, y + 16 * f), (int(150 + 100 * v), int(200 + 55 * v), 255, int(150 + 80 * v)))
     return img
 
 
@@ -112,7 +119,7 @@ def pack_icon():
 save(cloud(), RP / "textures/blocks/agartha_cloud.png")
 save(runestone(), RP / "textures/blocks/agartha_runestone.png")
 save(runestone(True), RP / "textures/blocks/agartha_runestone_top.png")
-save(frost_rune(), RP / "textures/items/frost_rune.png")
+save(portal_frames(), RP / "textures/blocks/agartha_portal.png")
 save(jarl_axe(), RP / "textures/items/jarl_axe.png")
 save(mead_horn(), RP / "textures/items/mead_horn.png")
 save(snowflake(), RP / "textures/particle/agartha_snowflake.png")

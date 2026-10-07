@@ -12,6 +12,8 @@ export { B };
 export const LAYOUT = {
   plaza: { x: 0, z: 176, r: 18 },
   gate: { z: 154 },
+  // The way home: a portal behind the arrival point, facing the gate.
+  returnPortal: { x: 0, z: 189 },
   avenue: { x1: -5, x2: 5, z1: 61, z2: 158 },
   lake: { x: 0, z: -5, rx: 84, rz: 62 },
   bridge: { z1: 60, z2: -68, half: 5 },

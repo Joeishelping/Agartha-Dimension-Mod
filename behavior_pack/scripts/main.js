@@ -1,18 +1,19 @@
 // Agartha - the frozen Viking heaven of this world, for Minecraft Bedrock.
 //
-//  * The afterlife: players who die in the mortal world awaken at the Gates of
-//    Agartha. Dying in Agartha (falling through the clouds) returns them to
-//    the mortal world at their spawn point.
-//  * Frost Rune (crafted item): travel to Agartha while alive, and back.
-//    Runestones in the realm also return you to the mortal world.
+//  * One portal: the Gate of Agartha (agartha:portal) is built in the mortal
+//    world. Walking into it takes you to Agartha; the return portal or a
+//    Runestone there brings you back to the spot you stepped in from.
+//    Only one Gate may exist; portal blocks placed elsewhere are refused.
+//  * Falling through the clouds below Agartha is instant death (you respawn
+//    normally in the mortal world).
 //  * The realm is built once inside a reserved pocket of the Overworld sky
 //    (see config.js). Nothing outside that pocket is ever modified.
 //
 // Operator commands (/scriptevent):
-//   agartha:afterlife on|off   send the dead to Agartha (default: on)
 //   agartha:forge              build the realm now
 //   agartha:rebuild            rebuild the realm from scratch
 //   agartha:visit              travel there yourself
+//   agartha:portal_reset       forget the Gate's location (to build a new one)
 
 import { world, system, GameMode, EquipmentSlot } from "@minecraft/server";
 import { REALM, REGION, B, IDS } from "./config.js";
@@ -20,7 +21,8 @@ import { ensureRealmBuilt, isRealmBuilt, isRealmBuilding, markRealmUnbuilt } fro
 
 const TAG = "agartha_in_realm";
 const RETURN_KEY = "agartha:return";
-const AFTERLIFE_KEY = "agartha:afterlife_off";
+const PORTAL_KEY = "agartha:portal";
+const PORTAL_CLUSTER = 12; // portal blocks within this range belong to the one Gate
 const FOG_ID = "agartha:heaven_fog";
 const FOG_USER = "agartha_realm";
 const ARRIVAL_GRACE_TICKS = 60;
@@ -28,7 +30,7 @@ const TRAVEL_COOLDOWN_TICKS = 40;
 
 const lastTravel = new Map();
 const arrivedAt = new Map();
-const diedInRealm = new Map();
+const lastSafe = new Map();
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -49,8 +51,30 @@ function inRealmVolume(entity) {
   return overRealmFootprint(entity) && entity.location.y > REALM.killY - 48;
 }
 
-function afterlifeEnabled() {
-  return world.getDynamicProperty(AFTERLIFE_KEY) !== true;
+function readJson(v) {
+  try {
+    return JSON.parse(v ?? "null");
+  } catch {
+    return null;
+  }
+}
+
+/** The single Gate in the mortal world: { x, y, z, dim } or null. */
+function gate() {
+  return readJson(world.getDynamicProperty(PORTAL_KEY));
+}
+
+function blockAt(dim, loc) {
+  try {
+    return dim.getBlock({ x: Math.floor(loc.x), y: Math.floor(loc.y), z: Math.floor(loc.z) });
+  } catch {
+    return undefined;
+  }
+}
+
+function inPortal(player) {
+  const l = player.location;
+  return blockAt(player.dimension, l)?.typeId === IDS.portal || blockAt(player.dimension, { x: l.x, y: l.y + 1, z: l.z })?.typeId === IDS.portal;
 }
 
 function run(player, cmd) {
@@ -118,16 +142,17 @@ function forge(onReady, requester) {
 // Travel
 // ---------------------------------------------------------------------------
 
-function enterRealm(player, ascended = false) {
+function enterRealm(player, from) {
   forge(() => {
-    if (player.isValid) teleportIn(player, ascended);
+    if (player.isValid) teleportIn(player, from);
   }, player);
 }
 
-function teleportIn(player, ascended) {
+/** from: where to send the player back to ({ x, y, z, dim, face? }). */
+function teleportIn(player, from) {
   if (!player.hasTag(TAG) && !overRealmFootprint(player)) {
     const l = player.location;
-    player.setDynamicProperty(RETURN_KEY, JSON.stringify({ x: l.x, y: l.y, z: l.z, dim: player.dimension.id }));
+    player.setDynamicProperty(RETURN_KEY, JSON.stringify(from ?? { x: l.x, y: l.y, z: l.z, dim: player.dimension.id }));
   }
   player.teleport(arrivalLocation(), {
     dimension: world.getDimension("overworld"),
@@ -140,28 +165,25 @@ function teleportIn(player, ascended) {
   system.runTimeout(() => {
     if (!player.isValid) return;
     applyRealmAtmosphere(player);
-    player.onScreenDisplay.setTitle(ascended ? "§fYou have ascended" : "§bAgartha", {
-      subtitle: ascended ? "§bWelcome to Agartha, the frozen heaven" : "§fthe frozen heaven",
+    player.onScreenDisplay.setTitle("§bAgartha", {
+      subtitle: "§fthe frozen heaven",
       fadeInDuration: 20,
       stayDuration: 80,
       fadeOutDuration: 30,
     });
     player.playSound("beacon.activate");
-    if (ascended) {
-      player.sendMessage("§7Your soul has crossed into Agartha. Use a §bRunestone§7 to be reborn in the mortal world.");
-    }
   }, 5);
 }
 
 function leaveRealm(player) {
-  let target;
-  try {
-    target = JSON.parse(player.getDynamicProperty(RETURN_KEY) ?? "null");
-  } catch {
-    target = null;
-  }
+  let target = readJson(player.getDynamicProperty(RETURN_KEY));
   clearRealmState(player);
   player.setDynamicProperty(RETURN_KEY, undefined);
+  lastTravel.set(player.id, system.currentTick);
+
+  // No remembered spot (e.g. arrived by command): step out in front of the Gate.
+  const g = gate();
+  if (!target && g) target = { x: g.x + 0.5, y: g.y, z: g.z + 2.5, dim: g.dim, face: { x: g.x + 0.5, z: g.z + 5 } };
 
   let dim = world.getDimension(target?.dim ?? "minecraft:overworld");
   let loc = target ? { x: target.x, y: target.y, z: target.z } : undefined;
@@ -177,34 +199,71 @@ function leaveRealm(player) {
       if (ds.y > 320) player.addEffect("slow_falling", 20 * 20, { showParticles: false });
     }
   }
-  player.teleport(loc, { dimension: dim });
+  const opts = { dimension: dim };
+  if (target?.face) opts.facingLocation = { x: target.face.x, y: loc.y + 1.6, z: target.face.z };
+  player.teleport(loc, opts);
   player.addEffect("resistance", 60, { amplifier: 4, showParticles: false });
   system.runTimeout(() => {
     if (player.isValid) player.playSound("mob.endermen.portal");
   }, 3);
 }
 
-function useRune(player) {
+/** A player stepped into a portal block. */
+function usePortal(player) {
   if (!canTravel(player)) return;
-  if (player.hasTag(TAG) && inRealmVolume(player)) leaveRealm(player);
-  else enterRealm(player);
+  if (player.hasTag(TAG) && overRealmFootprint(player)) {
+    leaveRealm(player);
+    return;
+  }
+  // Remember the spot just outside the Gate, facing away from it.
+  const safe = lastSafe.get(player.id) ?? player.location;
+  const pl = player.location;
+  const face = { x: safe.x + (safe.x - pl.x) * 4, z: safe.z + (safe.z - pl.z) * 4 };
+  const from = { x: safe.x, y: safe.y, z: safe.z, dim: player.dimension.id, face };
+  if (!isRealmBuilt()) {
+    // Still forging: nudge them back out so they don't stand in the portal.
+    player.teleport(safe);
+    player.sendMessage("§7The Gate shimmers, but Agartha is still being forged. Try again soon.");
+  }
+  enterRealm(player, from);
 }
 
 // ---------------------------------------------------------------------------
 // Events
 // ---------------------------------------------------------------------------
 
-world.afterEvents.itemUse.subscribe(({ source, itemStack }) => {
-  if (itemStack?.typeId === IDS.rune) useRune(source);
+world.afterEvents.playerInteractWithBlock.subscribe(({ player, block }) => {
+  if (block?.typeId === IDS.runestone && player.hasTag(TAG) && canTravel(player)) leaveRealm(player);
 });
 
-world.afterEvents.playerInteractWithBlock.subscribe(({ player, block, itemStack }) => {
-  if (block?.typeId === IDS.runestone) {
-    if (player.hasTag(TAG) && canTravel(player)) leaveRealm(player);
-  } else if (itemStack?.typeId === IDS.rune) {
-    useRune(player);
+// There is only one Gate of Agartha in the mortal world.
+world.afterEvents.playerPlaceBlock.subscribe(({ player, block, dimension }) => {
+  if (block.typeId !== IDS.portal) return;
+  const loc = block.location;
+  if (dimension.id === "minecraft:overworld" && overRealmFootprint({ dimension, location: loc })) return;
+  const g = gate();
+  const near = g && g.dim === dimension.id && Math.max(Math.abs(g.x - loc.x), Math.abs(g.y - loc.y), Math.abs(g.z - loc.z)) <= PORTAL_CLUSTER;
+  if (!g || near || !gateStillStands(g)) {
+    if (!near) {
+      world.setDynamicProperty(PORTAL_KEY, JSON.stringify({ x: loc.x, y: loc.y, z: loc.z, dim: dimension.id }));
+      player.sendMessage("§bThe Gate of Agartha has been founded here. §7Walk through it to reach the frozen heaven.");
+    }
+    return;
   }
+  block.setType("minecraft:air");
+  player.sendMessage(`§cThere can be only one Gate of Agartha. §7It stands at ${g.x} ${g.y} ${g.z}. Use §f/scriptevent agartha:portal_reset§7 to move it.`);
 });
+
+/** False only if we can see the Gate's area and no portal blocks remain. */
+function gateStillStands(g) {
+  const dim = world.getDimension(g.dim);
+  if (!blockAt(dim, g)) return true; // not loaded; assume it still stands
+  for (let dx = -PORTAL_CLUSTER; dx <= PORTAL_CLUSTER; dx++)
+    for (let dy = -PORTAL_CLUSTER; dy <= PORTAL_CLUSTER; dy++)
+      for (let dz = -PORTAL_CLUSTER; dz <= PORTAL_CLUSTER; dz++)
+        if (blockAt(dim, { x: g.x + dx, y: g.y + dy, z: g.z + dz })?.typeId === IDS.portal) return true;
+  return false;
+}
 
 world.afterEvents.itemCompleteUse.subscribe(({ source, itemStack }) => {
   if (itemStack?.typeId !== IDS.mead) return;
@@ -240,46 +299,22 @@ world.afterEvents.entitySpawn.subscribe(({ entity }) => {
   }
 });
 
-world.afterEvents.entityDie.subscribe(({ deadEntity }) => {
-  if (deadEntity?.typeId !== "minecraft:player") return;
-  diedInRealm.set(deadEntity.id, deadEntity.hasTag(TAG));
-});
-
 world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
-  if (initialSpawn) {
-    if (!player.hasTag(TAG)) return;
-    if (inRealmVolume(player)) {
-      arrivedAt.set(player.id, system.currentTick);
-      applyRealmAtmosphere(player);
-    } else {
-      clearRealmState(player);
-    }
+  if (!player.hasTag(TAG)) return;
+  if (initialSpawn && inRealmVolume(player)) {
+    arrivedAt.set(player.id, system.currentTick);
+    applyRealmAtmosphere(player);
     return;
   }
-  // Respawn after death.
-  const fromRealm = diedInRealm.get(player.id) ?? player.hasTag(TAG);
-  diedInRealm.delete(player.id);
+  // Died in Agartha (or left some other way): back to normal life.
   clearRealmState(player);
   player.setDynamicProperty(RETURN_KEY, undefined);
-  if (fromRealm) {
-    player.onScreenDisplay.setTitle("§fReborn", { subtitle: "§7You have returned to the mortal world", fadeInDuration: 10, stayDuration: 50, fadeOutDuration: 20 });
-  } else if (afterlifeEnabled()) {
-    // The dead ascend: their respawn point becomes where they return to.
-    lastTravel.set(player.id, system.currentTick);
-    enterRealm(player, true);
-  }
 });
 
 system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) => {
   if (!id.startsWith("agartha:")) return;
   const reply = (m) => (sourceEntity?.typeId === "minecraft:player" ? sourceEntity.sendMessage(m) : world.sendMessage(m));
   switch (id) {
-    case "agartha:afterlife": {
-      const off = message.trim().toLowerCase() === "off";
-      world.setDynamicProperty(AFTERLIFE_KEY, off ? true : undefined);
-      reply(off ? "§7Afterlife disabled: the dead respawn normally." : "§bAfterlife enabled: the dead ascend to Agartha.");
-      break;
-    }
     case "agartha:forge":
       forge();
       break;
@@ -293,6 +328,10 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) 
       break;
     case "agartha:visit":
       if (sourceEntity?.typeId === "minecraft:player") enterRealm(sourceEntity);
+      break;
+    case "agartha:portal_reset":
+      world.setDynamicProperty(PORTAL_KEY, undefined);
+      reply("§7The Gate of Agartha has been forgotten. The next portal block placed founds a new one.");
       break;
   }
 });
@@ -314,6 +353,11 @@ function realmTick() {
   const tick = system.currentTick;
   let anyoneHere = false;
   for (const player of world.getAllPlayers()) {
+    if (inPortal(player)) {
+      usePortal(player);
+      continue;
+    }
+    lastSafe.set(player.id, player.location);
     if (!player.hasTag(TAG)) continue;
     const graceOver = tick - (arrivedAt.get(player.id) ?? 0) > ARRIVAL_GRACE_TICKS;
     if (!overRealmFootprint(player)) {

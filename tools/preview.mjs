@@ -15,7 +15,7 @@ const COLORS = {
   snow: [244, 248, 255], snow_layer: [240, 246, 255], packed_ice: [150, 185, 235], blue_ice: [110, 160, 235], stone: [125, 125, 128],
   calcite: [222, 224, 220], quartz: [236, 232, 226], smooth_quartz: [238, 234, 228], quartz_bricks: [232, 228, 220], chiseled_quartz: [230, 226, 216],
   quartz_pillar: [234, 230, 222], quartz_stairs: [236, 232, 226], quartz_slab: [236, 232, 226], gold: [250, 205, 60], glowstone: [255, 220, 120],
-  sea_lantern: [200, 235, 240], light_blue_stained_glass: [130, 190, 240], light_blue_concrete: [60, 170, 220], beacon: [120, 230, 230], iron: [220, 220, 220],
+  sea_lantern: [200, 235, 240], light_blue_stained_glass: [130, 190, 240], light_blue_concrete: [60, 170, 220], beacon: [120, 230, 230], portal: [150, 215, 255], iron: [220, 220, 220],
   spruce_leaves: [50, 82, 60], spruce_log: [70, 50, 32], spruce_planks: [115, 85, 50], dark_oak: [66, 45, 25], stone_brick: [120, 120, 120], cobblestone: [110, 110, 110],
   cloud: [250, 252, 255], wool_red: [160, 40, 40], wool_white: [235, 235, 235], wool: [200, 170, 60], bone: [225, 220, 200], lantern: [255, 190, 90], campfire: [255, 140, 40], end_rod: [255, 255, 250],
   hay: [200, 170, 50], gravel: [135, 130, 128], default: [160, 160, 160],
@@ -140,4 +140,5 @@ render("aerial_east", [330, 270, 40], [-20, B + 10, -40], 1200, 675, 70);
 render("temple", [0, B + 12, -20], [0, B + 30, -110], 1200, 675, 75);
 render("village", [40, B + 25, 150], [110, B + 5, 70], 1200, 675, 75);
 render("night", A, [0, B + 40, 60], 1200, 675, 80, true);
+render("return_portal", [0.5, B + 4, 170], [0.5, B + 4, 190], 1000, 560, 75);
 console.log("rendered in", (Date.now() - t0) / 1000, "s");

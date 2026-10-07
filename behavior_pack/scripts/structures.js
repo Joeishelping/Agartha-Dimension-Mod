@@ -81,6 +81,24 @@ function plaza(c) {
   }
   c.set(px + 4, B + 1, pz + 4, "agartha:runestone");
   c.set(px - 4, B + 1, pz + 4, "agartha:runestone");
+  returnPortal(c);
+}
+
+/** Quartz-and-gold archway holding the portal back to the mortal world. */
+function returnPortal(c) {
+  const { x: rx, z: rz } = LAYOUT.returnPortal;
+  c.fill(rx - 4, B + 1, rz - 1, rx + 4, B + 8, rz + 1, QB);
+  c.fill(rx - 4, B + 1, rz, rx + 4, B + 8, rz, CQ);
+  c.fill(rx - 5, B + 1, rz - 1, rx - 5, B + 6, rz + 1, ...QP);
+  c.fill(rx + 5, B + 1, rz - 1, rx + 5, B + 6, rz + 1, ...QP);
+  c.fill(rx - 3, B + 9, rz - 1, rx + 3, B + 9, rz + 1, GOLD);
+  c.fill(rx - 1, B + 10, rz, rx + 1, B + 10, rz, GOLD);
+  c.set(rx, B + 11, rz, "minecraft:sea_lantern");
+  for (const sx of [-5, 5]) c.set(rx + sx, B + 7, rz, "minecraft:sea_lantern");
+  // Portal surface, 5 wide and 6 tall.
+  c.fill(rx - 2, B + 1, rz, rx + 2, B + 6, rz, "agartha:portal");
+  c.fill(rx - 2, B + 1, rz - 1, rx + 2, B + 6, rz - 1, "minecraft:air");
+  c.fill(rx - 2, B + 1, rz + 1, rx + 2, B + 6, rz + 1, "minecraft:air");
 }
 
 function heavensGate(c) {
@@ -773,7 +791,7 @@ const L = LAYOUT;
 const tz = L.temple.z;
 
 export const STRUCTURES = [
-  { name: "plaza", bounds: bounds(-20, 20, 156, 196), build: plaza },
+  { name: "plaza", bounds: bounds(-22, 22, 156, 196), build: plaza },
   { name: "gate", bounds: bounds(-20, 20, 148, 160), build: heavensGate },
   { name: "avenue", bounds: bounds(-12, 12, L.avenue.z1, L.avenue.z2), build: avenue },
   { name: "bridge", bounds: bounds(-8, 8, L.bridge.z2 - 4, L.bridge.z1 + 4), build: bridge },

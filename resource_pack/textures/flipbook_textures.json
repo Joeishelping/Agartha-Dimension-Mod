@@ -1,0 +1,8 @@
+[
+  {
+    "flipbook_texture": "textures/blocks/agartha_portal",
+    "atlas_tile": "agartha_portal",
+    "ticks_per_frame": 3,
+    "blend_frames": true
+  }
+]
