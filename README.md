@@ -33,7 +33,7 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | Landmark | |
 |---|---|
 | **The Heavenly Gates** | Where travellers arrive: a snowflake plaza, two 45-block quartz pillars crowned with beacon beams, golden gates thrown open, a golden sun, and the All-Father waiting. |
-| **The Processional Avenue** | A lamp-lit quartz road (the southern way) guarded by two crowned All-Father statues. |
+| **The Processional Avenue** | A lamp-lit quartz road (the southern way) guarded by two crowned All-Father statues and lined with **winged Valkyries** on columns, bearing golden spears and shields. |
 | **The Pole** | A quartz-and-ice tower rising from an island in the frozen lake almost to the sky, circled by three floating golden halos and crowned with a beacon. |
 | **The Great Bridge** | Two arched spans over the frozen lake, from the avenue to the Pole and on to the temple. Three **Viking longships** lie locked in the ice. |
 | **The Four Ways** | Besides the avenue: a **glacier** flowing down from the northern mountains, and **frozen rivers** east and west. Each spills over the edge of the world as a huge **icefall** into the clouds. |
@@ -49,12 +49,13 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | **Greek wonders** | Two round temples (tholoi) with golden-banded domes; the temple becomes an **ice palace** with domed towers, more spires, a golden frieze, roof statues and blue-flamed braziers. |
 | **Norse wonders** | A ring of rune stones, and white statues of stags, a polar bear, a horse and swans standing on the frozen lake. |
 | **Mountains & sky** | A crown of needle-peaked mountains with white, ice-blue and stone strata and snow-dusted ledges. Cloud belts drift between the peaks. Beyond the edge, **snowy peaks rise out of an unbroken sea of clouds**, and towering cloud walls ring the realm, so the world below is never seen. |
-| **Atmosphere** | **Aurora**: permanent ribbons of coloured glass hang in the northern sky, and aurora particle curtains ripple overhead day and night. There's drifting mist, falling snow, golden light motes and a soft haze that fades the horizon into white. No hostile mobs spawn. |
+| **Sound** | An original soundscape made for Agartha: a slow choir drone that never stops, crystal wind-chimes drifting past, gusts of the north wind, an angelic swell as you arrive, a harp when the All-Father blesses you, and a low hum around both portals. |
+| **Atmosphere** | **Aurora**: permanent ribbons of coloured glass hang in the northern sky, and aurora particle curtains ripple overhead day and night. There's drifting mist, falling snow, golden light motes, glowing **spirit lights**, soft **god rays** descending from the sky, **spirit orbs** floating over the lake, and a haze that fades the horizon into white. No hostile mobs spawn. |
 
 | | |
 |---|---|
 | ![Aerial](docs/aerial_south.png) | ![The ice palace](docs/palace.png) |
-| ![Yggdrasil](docs/yggdrasil.png) | ![The frozen lake](docs/lake.png) |
+| ![Yggdrasil](docs/yggdrasil.png) | ![The avenue of Valkyries](docs/avenue.png) |
 | ![West](docs/aerial_west.png) | ![The glacier valley](docs/north_valley.png) |
 
 *(Previews come from `tools/preview.mjs`, a simple voxel renderer of the exact blueprint, not in-game screenshots. Particles such as the aurora aren't shown.)*
@@ -76,7 +77,7 @@ Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.5.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.5.0 (Behavior)** and **Agartha v1.5.0 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.6.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.6.0 (Behavior)** and **Agartha v1.6.0 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 
@@ -89,5 +90,6 @@ In the creative inventory, all Agartha items (Keystone, Jarl's Axe, Mead Horn, A
 | `node tools/smoke_test.mjs` | Runs the scripts against a mock Minecraft API: forging in person, the Keystone, the Gate, both portals, the All-Father, exit mending, falling, the Keystone returning. |
 | `node --max-old-space-size=6000 tools/preview.mjs && python3 tools/ppm2png.py` | Renders preview images into `dist/preview/`. |
 | `python3 tools/gen_textures.py` | Regenerates textures, including the default All-Father skin. |
+| `python3 tools/gen_sounds.py` | Re-synthesizes the soundscape (needs numpy and ffmpeg). |
 
 The layout lives in `behavior_pack/scripts/terrain.js` (`LAYOUT`), the landmarks in `structures.js` and `citadel.js`, and location and heights in `config.js`. Bump `buildVersion` to rebuild existing worlds after changes.

@@ -411,6 +411,59 @@ function icePalace(c) {
 }
 
 // ---------------------------------------------------------------------------
+// Valkyries on columns along the Processional Avenue
+// ---------------------------------------------------------------------------
+
+const VALKYRIE = [
+  // Winged helm.
+  ...both((s) => cap([s * 1.05, 13.5, 0], [s * 2.3, 14.9, -0.7], 0.32, GOLD)),
+  ell([0, 13.5, 0], [1.08, 0.75, 1.05], GOLD),
+  ell([0, 12.7, 0.1], [1, 1.15, 1], "minecraft:calcite"),
+  // Spear held high, and a golden shield.
+  cap([2.4, 1.5, 0.9], [2.4, 19, 0.9], 0.3, GOLD),
+  ell([2.4, 19.4, 0.9], [0.35, 0.9, 0.35], GLASS),
+  ell([-1.9, 8.6, 1.6], [1.5, 1.5, 0.35], GOLD),
+  cap([1.4, 10.8, 0], [2.3, 13.2, 0.8], 0.5),
+  cap([-1.4, 10.8, 0], [-1.9, 8.6, 1.1], 0.5),
+  // Great wings of white feathers, tipped with ice.
+  ...[[4.4, 16, -2], [5.6, 12.6, -2.2], [5.2, 9.2, -2], [4.1, 6.6, -1.8]].flatMap(([x, y, z]) => both((s) => cap([s * 1.1, 11, -0.9], [s * x, y, z], 0.65))),
+  ...both((s) => ell([s * 4.8, 13.8, -2.1], [0.6, 0.6, 0.6], PI)),
+  ell([0, 9.6, 0], [1.6, 2.4, 1.1]),
+  ell([0, 4.2, 0], [2.2, 4.4, 1.8]),
+];
+
+function valkyrie(c, v) {
+  const g = B + 1;
+  c.fill(v.x - 1, g, v.z - 1, v.x + 1, g, v.z + 1, CQ);
+  c.fill(v.x, g + 1, v.z, v.x, g + 8, v.z, ...QP);
+  c.fill(v.x - 1, g + 9, v.z - 1, v.x + 1, g + 9, v.z + 1, CQ);
+  c.set(v.x, g + 9, v.z, SEA);
+  sculpt(c, v.x, g + 10, v.z, v.facing, 0.85, VALKYRIE);
+}
+
+// ---------------------------------------------------------------------------
+// Spirit orbs: lights of souls drifting over the lake and the valley
+// ---------------------------------------------------------------------------
+
+export const ORBS = (() => {
+  const out = [];
+  for (let i = 0; out.length < 44 && i < 400; i++) {
+    const x = Math.round((hash2(i, 0, 1601) - 0.5) * 300);
+    const z = Math.round((hash2(i, 1, 1601) - 0.5) * 300) - 10;
+    const col = islandColumn(x, z);
+    if (!col || col.top > B + 12) continue;
+    if (Math.abs(x) < 10 || Math.hypot(x - L.pole.x, z - L.pole.z) < 16) continue;
+    out.push({ x, z, y: Math.max(col.top, B) + 16 + Math.round(hash2(i, 2, 1601) * 26) });
+  }
+  return out;
+})();
+
+function orb(c, o) {
+  c.set(o.x, o.y, o.z, SEA);
+  for (const [dx, dy, dz] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) c.set(o.x + dx, o.y + dy, o.z + dz, "minecraft:white_stained_glass");
+}
+
+// ---------------------------------------------------------------------------
 // Aurora ribbons of coloured glass hanging in the northern sky
 // ---------------------------------------------------------------------------
 
@@ -489,6 +542,8 @@ export const MYTHIC = [
   { name: "runeRing", bounds: bounds(M.runeRing.x - 14, M.runeRing.x + 14, M.runeRing.z - 14, M.runeRing.z + 14), build: runeRing },
   ...M.animals.map((a, i) => ({ name: `animal${i}`, bounds: bounds(a.x - 30, a.x + 30, a.z - 30, a.z + 30), build: (c) => animalStatue(c, a) })),
   { name: "icePalace", bounds: bounds(L.temple.x - 48, L.temple.x + 48, L.temple.z - 40, L.temple.z + 42), build: icePalace },
+  ...M.valkyries.map((v, i) => ({ name: `valkyrie${i}`, bounds: bounds(v.x - 10, v.x + 10, v.z - 10, v.z + 10), build: (c) => valkyrie(c, v) })),
+  ...ORBS.map((o, i) => ({ name: `orb${i}`, bounds: bounds(o.x - 1, o.x + 1, o.z - 1, o.z + 1), build: (c) => orb(c, o) })),
   { name: "skyAurora", bounds: bounds(-280, 280, -260, -30), build: skyAurora },
   ...OUTER_PEAKS.map((p, i) => ({ name: `peak${i}`, bounds: bounds(p.x - p.r - 3, p.x + p.r + 3, p.z - p.r - 3, p.z + p.r + 3), build: (c) => outerPeak(c, p) })),
 ];

@@ -58,6 +58,11 @@ export const LAYOUT = {
     heimdall: { x: 150, z: 252, y: B + 12, r: 13 },
     tholoi: [{ x: -62, z: -50 }, { x: 50, z: 62 }],
     runeRing: { x: -38, z: 76 },
+    valkyries: [
+      { x: -14, z: 78, facing: "east" }, { x: 14, z: 78, facing: "west" },
+      { x: -14, z: 98, facing: "east" }, { x: 14, z: 98, facing: "west" },
+      { x: -14, z: 134, facing: "east" }, { x: 14, z: 134, facing: "west" },
+    ],
     animals: [
       { kind: "stag", x: -60, z: -20, facing: "east", s: 1.2 },
       { kind: "bear", x: 55, z: -25, facing: "west", s: 1.1 },

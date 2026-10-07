@@ -40,6 +40,10 @@ const TRAVEL_COOLDOWN_TICKS = 40;
 const lastTravel = new Map();
 const arrivedAt = new Map();
 const lastSafe = new Map();
+const nextAmbience = new Map();
+const nextChime = new Map();
+const nextWind = new Map();
+const AMBIENCE_TICKS = 20 * 37; // the 40 s choir loop, overlapped for a seamless bed
 
 const WELCOMES = [
   ["Welcome home, my child.", "You did well."],
@@ -118,6 +122,9 @@ function applyRealmAtmosphere(player) {
 function clearRealmState(player) {
   player.removeTag(TAG);
   run(player, `fog @s remove ${FOG_USER}`);
+  run(player, "stopsound @s agartha.ambience");
+  run(player, "stopsound @s agartha.wind");
+  nextAmbience.delete(player.id);
   player.removeEffect("night_vision");
   arrivedAt.delete(player.id);
 }
@@ -345,7 +352,7 @@ function welcome(player) {
     }
   }
   const [a, b] = WELCOMES[Math.floor(Math.random() * WELCOMES.length)];
-  player.playSound("random.orb", { pitch: 0.5 });
+  player.playSound("agartha.welcome");
   player.sendMessage(`§6§oThe All-Father: §r§f${a}`);
   system.runTimeout(() => {
     if (!player.isValid) return;
@@ -546,6 +553,48 @@ function mendExit() {
   }
 }
 
+/** The sound of heaven: a choir bed, ice chimes on the air, the north wind. */
+function soundscape(player, tick) {
+  const id = player.id;
+  if (tick >= (nextAmbience.get(id) ?? 0)) {
+    player.playSound("agartha.ambience");
+    nextAmbience.set(id, tick + AMBIENCE_TICKS);
+  }
+  if (tick >= (nextChime.get(id) ?? 0)) {
+    const l = player.location;
+    const a = Math.random() * Math.PI * 2;
+    try {
+      player.dimension.playSound("agartha.chime", { x: l.x + Math.cos(a) * 8, y: l.y + 3, z: l.z + Math.sin(a) * 8 }, { pitch: 0.85 + Math.random() * 0.3 });
+    } catch {
+      // cosmetic
+    }
+    nextChime.set(id, tick + 20 * (8 + Math.random() * 14));
+  }
+  if (tick >= (nextWind.get(id) ?? 0)) {
+    player.playSound("agartha.wind", { volume: 0.5 + Math.random() * 0.4 });
+    nextWind.set(id, tick + 20 * (14 + Math.random() * 20));
+  }
+}
+
+/** Both portals hum softly to anyone standing near them. */
+function portalHum() {
+  const spots = [];
+  const g = gate();
+  if (g) spots.push({ dim: g.dim, loc: { x: g.x + 0.5, y: g.y + 3, z: g.z + 0.5 } });
+  spots.push({ dim: "minecraft:overworld", loc: abs(LAYOUT.returnPortal.x + 0.5, B + 4, LAYOUT.returnPortal.z + 0.5) });
+  for (const s of spots) {
+    try {
+      const dim = world.getDimension(s.dim);
+      if (dim.getPlayers({ location: s.loc, maxDistance: 20 }).length) {
+        dim.playSound("agartha.portal", s.loc);
+        dim.spawnParticle("agartha:holy_motes", s.loc);
+      }
+    } catch {
+      // not loaded
+    }
+  }
+}
+
 function realmTick() {
   const tick = system.currentTick;
   let anyoneHere = false;
@@ -583,15 +632,25 @@ function realmTick() {
     }
     if (tick % 50 === 0) spawnFx(player, "agartha:mist", (Math.random() - 0.5) * 30, -1, (Math.random() - 0.5) * 30);
     if (tick % 200 === 0) player.addEffect("night_vision", 20 * 30, { showParticles: false });
+    soundscape(player, tick);
+    if (tick % 40 === 0) spawnFx(player, "agartha:spirit_lights", 0, 2, 0);
+    if (tick % 160 === 0 && Math.random() < 0.6) {
+      spawnFx(player, "agartha:god_rays", (Math.random() - 0.5) * 50, 30, (Math.random() - 0.5) * 50);
+    }
   }
 
   if (anyoneHere && tick % 200 === 0 && !isRealmBuilding()) mendExit();
+  if (tick % 110 === 0 && !isRealmBuilding()) portalHum();
   if (anyoneHere && tick % 360 === 0 && !isRealmBuilding()) {
     // The All-Father blesses those near the Gates.
     try {
       const af = allFather();
       const near = af?.dimension.getPlayers({ location: af.location, maxDistance: 20 });
-      if (near?.length) af.playAnimation("animation.agartha.allfather.bless", { blendOutTime: 0.4 });
+      if (near?.length) {
+        af.playAnimation("animation.agartha.allfather.bless", { blendOutTime: 0.4 });
+        af.dimension.playSound("agartha.bless", af.location);
+        af.dimension.spawnParticle("agartha:holy_motes", { x: af.location.x, y: af.location.y + 4, z: af.location.z });
+      }
     } catch {
       // cosmetic
     }
