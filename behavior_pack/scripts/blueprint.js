@@ -62,7 +62,7 @@ function computeColumn(x, z) {
   if (inCastleZone(x, z) && z >= 8) h = 0;
 
   const rim = Math.max(0, d - (edgeR - 3)) * 1.4;
-  const top = Math.min(316, SURF + Math.round(h) - Math.floor(rim));
+  const top = Math.min(REALM.clearToY - 1, SURF + Math.round(h) - Math.floor(rim));
 
   let depth = 3 + 40 * Math.pow(Math.max(0, 1 - d / edgeR), 0.75) + (fbm(x / 10, z / 10, 5) - 0.5) * 8;
 

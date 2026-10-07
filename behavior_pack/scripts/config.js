@@ -7,21 +7,21 @@
 
 export const REALM = {
   // World-space centre of the pocket. Must be a multiple of 16 (chunk aligned).
-  originX: 500000,
-  originZ: 500000,
+  originX: 100000,
+  originZ: 100000,
 
   // Height of the snowfield the castle stands on.
-  surfaceY: 268,
+  surfaceY: 276,
 
   // Island footprint (relative to origin).
   islandRadius: 58,
 
   // Sea of clouds below the island.
-  cloudBaseY: 206,
+  cloudBaseY: 214,
   cloudRadius: 150,
 
   // Anything that drops below this height inside the pocket dies instantly.
-  killY: 201,
+  killY: 209,
 
   // The pocket is built in 3x3 tiles of 128x128 blocks (8x8 chunks each), so a
   // single ticking area (<= 100 chunks) can load one tile at a time.
@@ -30,7 +30,7 @@ export const REALM = {
 
   // Vertical slice owned by the pocket. Everything from clearFromY up to the
   // build limit inside the region is wiped once before building.
-  clearFromY: 192,
+  clearFromY: 200,
   clearToY: 319,
 
   // Bump to force a rebuild on worlds that already have an older realm.

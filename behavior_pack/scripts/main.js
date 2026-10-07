@@ -94,7 +94,7 @@ function enterRealm(player) {
 }
 
 function teleportIn(player) {
-  if (!player.hasTag(TAG)) {
+  if (!player.hasTag(TAG) && !overRealmFootprint(player)) {
     const l = player.location;
     player.setDynamicProperty(RETURN_KEY, JSON.stringify({ x: l.x, y: l.y, z: l.z, dim: player.dimension.id }));
   }
