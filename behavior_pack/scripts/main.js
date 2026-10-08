@@ -20,8 +20,9 @@
 //   agartha:erase        remove everything Agartha built (in person)
 //   agartha:keystone     receive the Keystone again (only if no Gate stands)
 //   agartha:gate_reset   forget the Gate so a new one can be raised
+//   agartha:status       report whether Agartha, the Gate and its portal are working
 
-import { world, system, GameMode, EquipmentSlot, ItemStack } from "@minecraft/server";
+import { world, system, GameMode, EquipmentSlot, ItemStack, BlockPermutation } from "@minecraft/server";
 import { REALM, REGION, B, IDS } from "./config.js";
 import { LAYOUT } from "./terrain.js";
 import { ensureRealmBuilt, eraseRealm, isRealmBuilt, isRealmBuilding, markRealmUnbuilt } from "./builder.js";
@@ -92,9 +93,15 @@ function blockAt(dim, loc) {
   }
 }
 
+/** True if any part of the player's body is inside a portal block. */
 function inPortal(player) {
   const l = player.location;
-  return blockAt(player.dimension, l)?.typeId === IDS.portal || blockAt(player.dimension, { x: l.x, y: l.y + 1, z: l.z })?.typeId === IDS.portal;
+  for (const dy of [0.1, 0.9, 1.6]) {
+    for (const [dx, dz] of [[0, 0], [0.3, 0], [-0.3, 0], [0, 0.3], [0, -0.3]]) {
+      if (blockAt(player.dimension, { x: l.x + dx, y: l.y + dy, z: l.z + dz })?.typeId === IDS.portal) return true;
+    }
+  }
+  return false;
 }
 
 function run(player, cmd) {
@@ -262,7 +269,18 @@ function raiseGate(player, block) {
   const v = player.getViewDirection();
   const axis = Math.abs(v.x) > Math.abs(v.z) ? "x" : "z"; // the portal faces the player
   const base = { x: block.location.x, y: block.location.y + 1, z: block.location.z };
-  const portal = buildGate(player.dimension, base, axis);
+  let portal;
+  try {
+    portal = buildGate(player.dimension, base, axis);
+  } catch (e) {
+    player.sendMessage(`§cThe Heavenly Gate could not be raised: ${e.message ?? e}`);
+    return;
+  }
+  const placed = portal.filter((p) => blockAt(player.dimension, p)?.typeId === IDS.portal).length;
+  if (!placed) {
+    player.sendMessage("§cThe Gate's frame rose, but its portal did not take hold here. Try another spot with open sky around it.");
+    return;
+  }
   world.setDynamicProperty(GATE_KEY, JSON.stringify({ ...base, dim: player.dimension.id, axis, portal }));
   const equip = player.getComponent("minecraft:equippable");
   const held = equip?.getEquipment(EquipmentSlot.Mainhand);
@@ -397,8 +415,8 @@ function leaveRealm(player) {
   }, 3);
 }
 
-/** A player stepped into a portal block. */
-function usePortal(player) {
+/** A player stepped into (or tapped) a portal block. */
+function usePortal(player, portalLoc) {
   if (!canTravel(player)) return;
   if (overRealmFootprint(player)) {
     // The one exit.
@@ -412,7 +430,7 @@ function usePortal(player) {
     player.sendMessage("§7The Gate shimmers, but Agartha has not yet been forged.");
     return;
   }
-  const pl = player.location;
+  const pl = portalLoc ? { x: portalLoc.x + 0.5, z: portalLoc.z + 0.5 } : player.location;
   const face = { x: safe.x + (safe.x - pl.x) * 4, z: safe.z + (safe.z - pl.z) * 4 };
   teleportIn(player, { x: safe.x, y: safe.y, z: safe.z, dim: player.dimension.id, face });
 }
@@ -436,6 +454,14 @@ function useKeystone(player, block) {
 }
 
 world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
+  if (ev.block?.typeId === IDS.portal) {
+    // Tapping the shimmering surface also takes you through.
+    ev.cancel = true;
+    const { player, block } = ev;
+    const loc = { x: block.location.x, y: block.location.y, z: block.location.z };
+    system.run(() => usePortal(player, loc));
+    return;
+  }
   if (ev.itemStack?.typeId !== IDS.keystone) return;
   ev.cancel = true;
   const { player, block } = ev;
@@ -558,6 +584,29 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, sourceEntity }) => {
       else if (!isRealmBuilt()) reply("§cForge Agartha first.");
       else giveKeystone(player);
       break;
+    case "agartha:status": {
+      const g = gate();
+      const lines = [`§bAgartha: §f${isRealmBuilt() ? "forged" : isRealmBuilding() ? "being forged/erased" : "not forged — run /scriptevent agartha:forge"}`];
+      lines.push(`§bWatcher: §f${ticking ? "running" : "NOT running"}`);
+      if (g) {
+        const dim = world.getDimension(g.dim);
+        const list = g.portal ?? [];
+        const ok = list.filter((p) => blockAt(dim, p)?.typeId === IDS.portal).length;
+        const unloaded = list.filter((p) => !blockAt(dim, p)).length;
+        lines.push(`§bGate: §f${g.x} ${g.y} ${g.z} (${g.dim.replace("minecraft:", "")}) — ${ok}/${list.length} portal blocks present${unloaded ? `, ${unloaded} not loaded` : ""}`);
+      } else {
+        lines.push("§bGate: §fnone — use the Keystone (or /scriptevent agartha:keystone) or place portal blocks");
+      }
+      let portalOk = true;
+      try {
+        BlockPermutation.resolve(IDS.portal);
+      } catch {
+        portalOk = false;
+      }
+      lines.push(`§bPortal block: §f${portalOk ? "loaded" : "MISSING — activate both Agartha packs"}`);
+      for (const l of lines) reply(l);
+      break;
+    }
     case "agartha:gate_reset":
       world.setDynamicProperty(GATE_KEY, undefined);
       reply("§7The Heavenly Gate has been forgotten. Use §f/scriptevent agartha:keystone§7 to raise a new one.");
@@ -715,6 +764,13 @@ function realmTick() {
   }
 }
 
-world.afterEvents.worldLoad.subscribe(() => {
+let ticking = false;
+function startTicking() {
+  if (ticking) return;
+  ticking = true;
   system.runInterval(realmTick, 2);
-});
+}
+world.afterEvents.worldLoad.subscribe(startTicking);
+// If the scripts were (re)loaded into an already-running world, worldLoad never
+// fires; start anyway a moment later.
+system.runTimeout(startTicking, 40);

@@ -15,6 +15,8 @@ function perm(id, states) {
       try {
         p = BlockPermutation.resolve(id);
       } catch {
+        // Never seal the doorway with a stand-in block: the portal must be real.
+        if (id === "agartha:portal") throw new Error("the portal block is not loaded (is the Agartha resource + behavior pack active?)");
         p = BlockPermutation.resolve("minecraft:quartz_block");
       }
     }
@@ -32,8 +34,9 @@ export function buildGate(dim, base, axis) {
   // Local frame: a = along the gate's width, d = through it.
   const at = (a, y, d) => (axis === "z" ? { x: base.x + a, y: base.y + y, z: base.z + d } : { x: base.x + d, y: base.y + y, z: base.z + a });
   const put = (a, y, d, id, states) => {
+    const p = perm(id, states);
     try {
-      dim.getBlock(at(a, y, d))?.setPermutation(perm(id, states));
+      dim.getBlock(at(a, y, d))?.setPermutation(p);
     } catch {
       // unloaded edge; ignore
     }

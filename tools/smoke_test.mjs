@@ -58,6 +58,10 @@ expect(inRealm(p) && Math.abs(p.location.z - (OZ + REALM.arrival.z)) < 1 && Math
 ticks(80);
 expect(p.log.some((e) => e[0] === "msg" && e[1].includes("All-Father")), "the All-Father welcomes the arrival");
 
+// Status report.
+fire("system.scriptEventReceive", { id: "agartha:status", message: "", sourceEntity: p });
+expect(p.log.some((e) => e[0] === "msg" && e[1].includes("Watcher: §frunning")) && p.log.some((e) => e[0] === "msg" && /Gate: .*portal blocks present/.test(e[1])), "status reports the watcher and the Gate");
+
 // Break part of the exit; it mends itself.
 blocks.delete(exitKey);
 ticks(220);
@@ -96,6 +100,17 @@ expect(inRealm(p), "walking through a hand-built Gate reaches Agartha");
 ticks(60);
 p.location = { x: OX + 0.5, y: B + 1, z: OZ + 189.5 }; ticks(2);
 expect(!inRealm(p) && Math.abs(p.location.z - 22.5) < 0.01, "and the exit brings you back to it");
+
+// Tapping the Gate's surface also takes you through.
+ticks(60);
+p.location = { x: 20.5, y: 64, z: 23.5 }; ticks(2);
+const tap = { player: p, block: { typeId: "agartha:portal", location: { x: 20, y: 64, z: 20 } } };
+fire("before.playerInteractWithBlock", tap);
+ticks(4);
+expect(tap.cancel === true && inRealm(p), "tapping the portal surface enters Agartha");
+ticks(60);
+p.location = { x: OX + 0.5, y: B + 1, z: OZ + 189.5 }; ticks(2);
+expect(!inRealm(p) && Math.abs(p.location.z - 23.5) < 0.01, "and you come back where you tapped from");
 
 // Stray portal blocks are refused.
 blocks.set("500,64,500", "agartha:portal");

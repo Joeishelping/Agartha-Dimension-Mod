@@ -16,7 +16,7 @@ Either way works:
 - **Keystone:** tap the ground with it, or use it while looking at the ground. A quartz-and-ice archway with open golden gates rises there, facing you, with a glowing portal inside.
 - **By hand:** take *Heavenly Gate of Agartha* portal blocks from the **Agartha** creative group and build your own frame. The first portal block you place founds the Gate; more blocks within 12 of it become part of it.
 
-Walk through the Gate to arrive at the Gates of Agartha.
+**Walk into the glowing portal surface, or tap it**, to arrive at the Gates of Agartha.
 
 - There is **only one Gate**. Portal blocks placed anywhere else are removed, and you're told where the Gate stands.
 - If the Gate is torn down completely, its **Keystone returns** to whoever broke the last of it, so the Gate can be raised again somewhere else. `/scriptevent agartha:gate_reset` also forgets it.
@@ -75,6 +75,7 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | `/scriptevent agartha:erase` | **Delete Agartha**: removes everything the forge built (island, clouds, All-Father, animals), carrying you over the site like forging does. Whatever stood above Y 96 there before the first forge doesn't come back. The Heavenly Gate in your world is left alone; break it by hand. |
 | `/scriptevent agartha:keystone` | Get the Keystone again (only when no Gate stands). |
 | `/scriptevent agartha:gate_reset` | Forget the Gate's location, e.g. if it was destroyed by other means. |
+| `/scriptevent agartha:status` | Check that everything works: whether Agartha is forged, where the Gate is, how many of its portal blocks are present, and whether the portal block is loaded. |
 
 ## Safety
 Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket of the Overworld sky centred on X 99,890 / Z 100,298. **Every block the forge writes is bounds-checked** against one reserved box (X 99,536 → 100,239, Z 99,936 → 100,639, Y 96 → 319), and world generation is never changed. `tools/test_blueprint.mjs` verifies all ~820,000 build operations stay inside. The only thing built outside that box is the Heavenly Gate, where *you* choose to raise it.
@@ -82,7 +83,7 @@ Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.6.1.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.6.1 (Behavior)** and **Agartha v1.6.1 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.6.2.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.6.2 (Behavior)** and **Agartha v1.6.2 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 

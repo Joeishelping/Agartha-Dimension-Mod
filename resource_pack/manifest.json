@@ -1,13 +1,13 @@
 {
   "format_version": 2,
   "header": {
-    "name": "Agartha v1.6.1 (Resources)",
+    "name": "Agartha v1.6.2 (Resources)",
     "description": "pack.description",
     "uuid": "20c2b8e6-226d-447e-a336-e580e4ea5ad7",
     "version": [
       1,
       6,
-      1
+      2
     ],
     "min_engine_version": [
       1,
@@ -22,7 +22,7 @@
       "version": [
         1,
         6,
-        1
+        2
       ]
     }
   ],
@@ -32,7 +32,7 @@
       "version": [
         1,
         6,
-        1
+        2
       ]
     }
   ]
