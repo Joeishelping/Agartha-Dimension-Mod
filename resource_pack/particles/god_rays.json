@@ -10,7 +10,7 @@
     },
     "components": {
       "minecraft:emitter_rate_instant": {
-        "num_particles": 5
+        "num_particles": 6
       },
       "minecraft:emitter_lifetime_once": {
         "active_time": 0.1
@@ -28,8 +28,8 @@
       "minecraft:particle_initial_speed": 0,
       "minecraft:particle_appearance_billboard": {
         "size": [
-          "1.2 + variable.particle_random_2 * 1.4",
-          "26 + variable.particle_random_3 * 10"
+          "1.6 + variable.particle_random_2 * 1.6",
+          "30 + variable.particle_random_3 * 12"
         ],
         "facing_camera_mode": "lookat_y",
         "uv": {
@@ -49,8 +49,8 @@
         "color": [
           1,
           0.97,
-          0.82,
-          "math.sin(variable.particle_age / variable.particle_lifetime * 180) * 0.28"
+          0.85,
+          "math.sin(variable.particle_age / variable.particle_lifetime * 180) * 0.5"
         ]
       }
     }

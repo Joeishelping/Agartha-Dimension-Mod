@@ -58,6 +58,11 @@ expect(inRealm(p) && Math.abs(p.location.z - (OZ + REALM.arrival.z)) < 1 && Math
 ticks(80);
 expect(p.log.some((e) => e[0] === "msg" && e[1].includes("All-Father")), "the All-Father welcomes the arrival");
 
+// The aura follows the player through Agartha.
+expect(mc.spawned.some(([id]) => id === "agartha:aura"), "an aura is summoned to carry Agartha's effects and sounds");
+fire("system.scriptEventReceive", { id: "agartha:fx_test", message: "", sourceEntity: p });
+expect(p.log.some((e) => e[0] === "msg" && e[1].includes("Playing Agartha")), "fx_test plays the effects on demand");
+
 // Status report.
 fire("system.scriptEventReceive", { id: "agartha:status", message: "", sourceEntity: p });
 expect(p.log.some((e) => e[0] === "msg" && e[1].includes("Watcher: §frunning")) && p.log.some((e) => e[0] === "msg" && /Gate: .*portal blocks present/.test(e[1])), "status reports the watcher and the Gate");
@@ -71,6 +76,7 @@ expect(blocks.get(exitKey) === "agartha:portal", "the exit portal mends itself")
 p.location = { x: OX + 0.5, y: B + 1, z: OZ + 189.5 };
 ticks(2);
 expect(!inRealm(p) && Math.abs(p.location.z - 51.5) < 0.01, "the exit returns you before the Heavenly Gate");
+expect(mc.removed.includes("agartha:aura"), "the aura is dismissed when you leave");
 ticks(6);
 expect(!inRealm(p), "no instant re-entry after returning");
 

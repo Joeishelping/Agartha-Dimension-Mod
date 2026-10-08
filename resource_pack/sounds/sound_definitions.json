@@ -6,85 +6,91 @@
       "sounds": [
         {
           "name": "sounds/agartha/ambience",
-          "volume": 0.75,
-          "stream": true
+          "volume": 0.8,
+          "load_on_low_memory": true,
+          "stream": true,
+          "is3D": false
         }
-      ],
-      "min_distance": 200.0,
-      "max_distance": 400.0
+      ]
+    },
+    "agartha.wind": {
+      "category": "ambient",
+      "sounds": [
+        {
+          "name": "sounds/agartha/wind1",
+          "volume": 0.55,
+          "load_on_low_memory": true,
+          "is3D": false
+        },
+        {
+          "name": "sounds/agartha/wind2",
+          "volume": 0.55,
+          "load_on_low_memory": true,
+          "is3D": false
+        }
+      ]
     },
     "agartha.chime": {
       "category": "ambient",
       "sounds": [
         {
           "name": "sounds/agartha/chime1",
-          "volume": 0.6
+          "volume": 0.75,
+          "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/chime2",
-          "volume": 0.6
+          "volume": 0.75,
+          "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/chime3",
-          "volume": 0.6
+          "volume": 0.75,
+          "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/chime4",
-          "volume": 0.6
+          "volume": 0.75,
+          "load_on_low_memory": true
         }
       ],
-      "min_distance": 6.0,
-      "max_distance": 40.0
-    },
-    "agartha.wind": {
-      "category": "weather",
-      "sounds": [
-        {
-          "name": "sounds/agartha/wind1",
-          "volume": 0.55,
-          "stream": true
-        },
-        {
-          "name": "sounds/agartha/wind2",
-          "volume": 0.55,
-          "stream": true
-        }
-      ],
-      "min_distance": 200.0,
-      "max_distance": 400.0
+      "min_distance": 4.0,
+      "max_distance": 48.0
     },
     "agartha.welcome": {
       "category": "neutral",
       "sounds": [
         {
           "name": "sounds/agartha/welcome",
-          "volume": 1.0
+          "volume": 1.0,
+          "load_on_low_memory": true,
+          "is3D": false
         }
-      ],
-      "min_distance": 16.0,
-      "max_distance": 64.0
+      ]
     },
     "agartha.portal": {
       "category": "block",
       "sounds": [
         {
           "name": "sounds/agartha/portal",
-          "volume": 0.7
+          "volume": 0.8,
+          "load_on_low_memory": true
         }
       ],
-      "min_distance": 3.0,
-      "max_distance": 24.0
+      "min_distance": 4.0,
+      "max_distance": 28.0
     },
     "agartha.bless": {
       "category": "neutral",
       "sounds": [
         {
           "name": "sounds/agartha/bless",
-          "volume": 0.9
+          "volume": 1.0,
+          "load_on_low_memory": true
         }
       ],
       "min_distance": 8.0,
-      "max_distance": 40.0
+      "max_distance": 48.0
     }
   }
 }

@@ -1,13 +1,13 @@
 {
   "format_version": 2,
   "header": {
-    "name": "Agartha v1.6.2 (Behavior)",
+    "name": "Agartha v1.7.0 (Behavior)",
     "description": "pack.description",
     "uuid": "7ad58745-6d8c-4a05-a584-01b6546607fc",
     "version": [
       1,
-      6,
-      2
+      7,
+      0
     ],
     "min_engine_version": [
       1,
@@ -21,8 +21,8 @@
       "uuid": "af0f8346-2cd2-4558-b810-d64464cef2b8",
       "version": [
         1,
-        6,
-        2
+        7,
+        0
       ]
     },
     {
@@ -32,8 +32,8 @@
       "entry": "scripts/main.js",
       "version": [
         1,
-        6,
-        2
+        7,
+        0
       ]
     }
   ],
@@ -42,8 +42,8 @@
       "uuid": "20c2b8e6-226d-447e-a336-e580e4ea5ad7",
       "version": [
         1,
-        6,
-        2
+        7,
+        0
       ]
     },
     {

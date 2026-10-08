@@ -21,6 +21,7 @@
 //   agartha:keystone     receive the Keystone again (only if no Gate stands)
 //   agartha:gate_reset   forget the Gate so a new one can be raised
 //   agartha:status       report whether Agartha, the Gate and its portal are working
+//   agartha:fx_test      play Agartha's sounds and effects where you stand
 
 import { world, system, GameMode, EquipmentSlot, ItemStack, BlockPermutation } from "@minecraft/server";
 import { REALM, REGION, B, IDS } from "./config.js";
@@ -45,6 +46,8 @@ const nextAmbience = new Map();
 const nextChime = new Map();
 const nextWind = new Map();
 const AMBIENCE_TICKS = 20 * 37; // the 40 s choir loop, overlapped for a seamless bed
+const AURA = "agartha:aura";
+const auras = new Map();
 
 const WELCOMES = [
   ["Welcome home, my child.", "You did well."],
@@ -132,6 +135,7 @@ function clearRealmState(player) {
   run(player, "stopsound @s agartha.ambience");
   run(player, "stopsound @s agartha.wind");
   nextAmbience.delete(player.id);
+  removeAura(player.id);
   player.removeEffect("night_vision");
   arrivedAt.delete(player.id);
 }
@@ -604,7 +608,22 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, sourceEntity }) => {
         portalOk = false;
       }
       lines.push(`§bPortal block: §f${portalOk ? "loaded" : "MISSING — activate both Agartha packs"}`);
+      if (player) {
+        const a = auras.get(player.id);
+        lines.push(`§bYour aura (effects & sounds): §f${a?.isValid ? "with you" : player.hasTag(TAG) ? "not summoned — script effects used instead" : "only inside Agartha"}`);
+      }
       for (const l of lines) reply(l);
+      break;
+    }
+    case "agartha:fx_test": {
+      // Plays Agartha's sounds and effects right where you stand, anywhere.
+      if (!player) break;
+      player.playSound("agartha.chime");
+      system.runTimeout(() => player.isValid && player.playSound("agartha.welcome"), 30);
+      for (const [id, dy] of [["agartha:snowfall", 6], ["agartha:holy_motes", 1], ["agartha:spirit_lights", 1], ["agartha:god_rays", 25], ["agartha:aurora", 30], ["agartha:mist", -1]]) {
+        spawnFx(player, id, 0, dy, -6);
+      }
+      reply("§bPlaying Agartha's chime and arrival choir, with snow, lights, god rays, aurora and mist in front of you. §7If you see/hear nothing, check both Agartha packs are active and your Ambient/Environment volume is up.");
       break;
     }
     case "agartha:gate_reset":
@@ -636,6 +655,55 @@ function mendExit() {
       const b = blockAt(dim, abs(x, y, rz));
       if (b && b.typeId !== IDS.portal) b.setType(IDS.portal);
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// The aura: an invisible companion that follows each player through Agartha.
+// Its effects run on the player's own device (snow, spirit lights, aurora,
+// mist, the choir, wind and chimes), so they never depend on script timing.
+// ---------------------------------------------------------------------------
+
+function removeAura(playerId) {
+  const a = auras.get(playerId);
+  auras.delete(playerId);
+  try {
+    if (a?.isValid) a.remove();
+  } catch {
+    // already gone
+  }
+}
+
+function ensureAura(player) {
+  let a = auras.get(player.id);
+  if (a && !a.isValid) a = undefined;
+  if (!a) {
+    try {
+      a = player.dimension.spawnEntity(AURA, player.location);
+      a.setDynamicProperty("agartha:owner", player.id);
+      auras.set(player.id, a);
+    } catch {
+      return undefined;
+    }
+  }
+  try {
+    a.teleport(player.location, { dimension: player.dimension });
+  } catch {
+    // unloaded for a moment
+  }
+  return a;
+}
+
+/** Auras left behind (logouts, crashes) are cleared away. */
+function sweepAuras() {
+  try {
+    const dim = world.getDimension("overworld");
+    for (const e of dim.getEntities({ type: AURA })) {
+      const owner = e.getDynamicProperty("agartha:owner");
+      if (!owner || auras.get(owner) !== e) e.remove();
+    }
+  } catch {
+    // nothing loaded
   }
 }
 
@@ -707,25 +775,29 @@ function realmTick() {
       }
       continue;
     }
-    if (tick % 20 === 0) spawnFx(player, "agartha:snowfall", 0, 7, 0);
-    if (tick % 30 === 0) spawnFx(player, "agartha:holy_motes", 0, 0, 0);
+    if (tick % 200 === 0) player.addEffect("night_vision", 20 * 30, { showParticles: false });
+    const aura = tick % 10 === 0 ? ensureAura(player) : auras.get(player.id);
+    if (!aura?.isValid) {
+      // No aura (it could not be summoned): play everything from the script instead.
+      if (tick % 10 === 0) spawnFx(player, "agartha:snowfall", 0, 7, 0);
+      if (tick % 40 === 0) spawnFx(player, "agartha:spirit_lights", 0, 2, 0);
+      if (tick % 50 === 0) spawnFx(player, "agartha:mist", (Math.random() - 0.5) * 30, -1, (Math.random() - 0.5) * 30);
+      soundscape(player, tick);
+    }
     if (tick % 30 === 0) {
-      // Aurora curtains overhead, mostly toward the northern mountains. Kept
-      // within ~50 blocks: particles further away are culled by the game.
+      // Extra aurora curtains overhead, mostly toward the northern mountains.
       const a = (Math.random() < 0.7 ? -Math.PI / 2 : 0) + (Math.random() - 0.5) * Math.PI * 1.4;
       const d = 18 + Math.random() * 26;
       spawnFx(player, "agartha:aurora", Math.cos(a) * d, 30 + Math.random() * 18, Math.sin(a) * d);
     }
-    if (tick % 50 === 0) spawnFx(player, "agartha:mist", (Math.random() - 0.5) * 30, -1, (Math.random() - 0.5) * 30);
-    if (tick % 200 === 0) player.addEffect("night_vision", 20 * 30, { showParticles: false });
-    soundscape(player, tick);
-    if (tick % 40 === 0) spawnFx(player, "agartha:spirit_lights", 0, 2, 0);
-    if (tick % 160 === 0 && Math.random() < 0.6) {
-      spawnFx(player, "agartha:god_rays", (Math.random() - 0.5) * 50, 30, (Math.random() - 0.5) * 50);
+    if (tick % 60 === 0) spawnFx(player, "agartha:holy_motes", (Math.random() - 0.5) * 16, 1, (Math.random() - 0.5) * 16);
+    if (tick % 140 === 0 && Math.random() < 0.7) {
+      spawnFx(player, "agartha:god_rays", (Math.random() - 0.5) * 40, 32, (Math.random() - 0.5) * 40);
     }
   }
 
   if (anyoneHere && tick % 200 === 0 && !isRealmBuilding()) mendExit();
+  if (tick % 400 === 0) sweepAuras();
   if (tick % 110 === 0 && !isRealmBuilding()) portalHum();
   if (anyoneHere && tick % 360 === 0 && !isRealmBuilding()) {
     // The All-Father blesses those near the Gates.

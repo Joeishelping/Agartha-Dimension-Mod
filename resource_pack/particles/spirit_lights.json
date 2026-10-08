@@ -4,13 +4,13 @@
     "description": {
       "identifier": "agartha:spirit_lights",
       "basic_render_parameters": {
-        "material": "particles_add",
+        "material": "particles_blend",
         "texture": "textures/particle/agartha_mist"
       }
     },
     "components": {
       "minecraft:emitter_rate_instant": {
-        "num_particles": 5
+        "num_particles": 6
       },
       "minecraft:emitter_lifetime_once": {
         "active_time": 0.1
@@ -41,8 +41,8 @@
       },
       "minecraft:particle_appearance_billboard": {
         "size": [
-          "0.18 + variable.particle_random_3 * 0.12",
-          "0.18 + variable.particle_random_3 * 0.12"
+          "0.3 + variable.particle_random_3 * 0.2",
+          "0.3 + variable.particle_random_3 * 0.2"
         ],
         "facing_camera_mode": "rotate_xyz",
         "uv": {
@@ -60,10 +60,10 @@
       },
       "minecraft:particle_appearance_tinting": {
         "color": [
-          "0.55 + variable.particle_random_2 * 0.45",
-          "0.85 + variable.particle_random_2 * 0.1",
+          0.6,
+          0.92,
           1,
-          "math.sin(variable.particle_age / variable.particle_lifetime * 180) * (0.6 + 0.4 * math.sin(variable.particle_age * 400))"
+          "math.sin(variable.particle_age / variable.particle_lifetime * 180) * 0.9"
         ]
       }
     }

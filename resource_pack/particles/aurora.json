@@ -76,7 +76,7 @@
           1,
           1,
           "0.9 + variable.hue * 0.1",
-          "variable.fade * 0.7"
+          "variable.fade * 0.85"
         ]
       }
     }

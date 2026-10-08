@@ -54,7 +54,7 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | **Greek wonders** | Two round temples (tholoi) with golden-banded domes; the temple becomes an **ice palace** with domed towers, more spires, a golden frieze, roof statues and blue-flamed braziers. |
 | **Norse wonders** | A ring of rune stones, and white statues of stags, a polar bear, a horse and swans standing on the frozen lake. |
 | **Mountains & sky** | A crown of needle-peaked mountains with white, ice-blue and stone strata and snow-dusted ledges. Cloud belts drift between the peaks. Beyond the edge, **snowy peaks rise out of an unbroken sea of clouds**, and towering cloud walls ring the realm, so the world below is never seen. |
-| **Sound** | An original soundscape made for Agartha: a slow choir drone that never stops, crystal wind-chimes drifting past, gusts of the north wind, an angelic swell as you arrive, a harp when the All-Father blesses you, and a low hum around both portals. |
+| **Sound** | An original soundscape made for Agartha, carried by an invisible aura that follows each player so it plays on their own device: a slow choir drone that never stops, crystal wind-chimes drifting past, gusts of the north wind, an angelic swell as you arrive, a harp when the All-Father blesses you, and a low hum around both portals. |
 | **Atmosphere** | **Aurora**: permanent ribbons of coloured glass hang in the northern sky, and aurora particle curtains ripple overhead day and night. There's drifting mist, falling snow, golden light motes, glowing **spirit lights**, soft **god rays** descending from the sky, **spirit orbs** floating over the lake, and a haze that fades the horizon into white. No hostile mobs spawn. |
 
 | | |
@@ -75,6 +75,7 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | `/scriptevent agartha:erase` | **Delete Agartha**: removes everything the forge built (island, clouds, All-Father, animals), carrying you over the site like forging does. Whatever stood above Y 96 there before the first forge doesn't come back. The Heavenly Gate in your world is left alone; break it by hand. |
 | `/scriptevent agartha:keystone` | Get the Keystone again (only when no Gate stands). |
 | `/scriptevent agartha:gate_reset` | Forget the Gate's location, e.g. if it was destroyed by other means. |
+| `/scriptevent agartha:fx_test` | Plays Agartha's chime and arrival choir, and shows snow, lights, god rays, aurora and mist right where you stand (works anywhere) to check sound and effects are working. |
 | `/scriptevent agartha:status` | Check that everything works: whether Agartha is forged, where the Gate is, how many of its portal blocks are present, and whether the portal block is loaded. |
 
 ## Safety
@@ -83,7 +84,7 @@ Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.6.2.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.6.2 (Behavior)** and **Agartha v1.6.2 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.7.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.7.0 (Behavior)** and **Agartha v1.7.0 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 

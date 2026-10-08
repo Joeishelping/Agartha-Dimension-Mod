@@ -1,0 +1,26 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.agartha.aura": {
+      "initial_state": "default",
+      "states": {
+        "default": {
+          "particle_effects": [
+            {
+              "effect": "snow"
+            },
+            {
+              "effect": "lights"
+            },
+            {
+              "effect": "aurora"
+            },
+            {
+              "effect": "mist"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

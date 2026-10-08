@@ -1,0 +1,35 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.agartha.aura.sounds": {
+      "loop": true,
+      "animation_length": 40.0,
+      "sound_effects": {
+        "0.0": {
+          "effect": "ambience"
+        },
+        "4.0": {
+          "effect": "chime"
+        },
+        "9.5": {
+          "effect": "wind"
+        },
+        "15.0": {
+          "effect": "chime"
+        },
+        "21.5": {
+          "effect": "chime"
+        },
+        "26.0": {
+          "effect": "wind"
+        },
+        "31.0": {
+          "effect": "chime"
+        },
+        "37.0": {
+          "effect": "chime"
+        }
+      }
+    }
+  }
+}

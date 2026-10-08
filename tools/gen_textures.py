@@ -191,6 +191,7 @@ save(snowflake(), RP / "textures/particle/agartha_snowflake.png")
 save(aurora(), RP / "textures/particle/agartha_aurora.png")
 save(mist(), RP / "textures/particle/agartha_mist.png")
 save(allfather_skin(), RP / "textures/entity/allfather.png")
+Image.new("RGBA", (16, 16), (0, 0, 0, 0)).save(RP / "textures/entity/agartha_aura.png")  # invisible aura
 icon = pack_icon()
 save(icon, RP / "pack_icon.png")
 save(icon, BP / "pack_icon.png")

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-SR = 32000
+SR = 44100
 OUT = Path(__file__).resolve().parent.parent / "resource_pack" / "sounds" / "agartha"
 rng = np.random.default_rng(7)
 

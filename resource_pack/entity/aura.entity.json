@@ -1,0 +1,41 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "agartha:aura",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/agartha_aura"
+      },
+      "geometry": {
+        "default": "geometry.agartha.aura"
+      },
+      "particle_effects": {
+        "snow": "agartha:aura_snow",
+        "lights": "agartha:aura_lights",
+        "aurora": "agartha:aura_aurora",
+        "mist": "agartha:aura_mist"
+      },
+      "sound_effects": {
+        "ambience": "agartha.ambience",
+        "wind": "agartha.wind",
+        "chime": "agartha.chime"
+      },
+      "animations": {
+        "fx": "controller.animation.agartha.aura",
+        "sounds": "animation.agartha.aura.sounds"
+      },
+      "scripts": {
+        "animate": [
+          "fx",
+          "sounds"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}
