@@ -33,8 +33,16 @@ expect(p.items.includes("agartha:gate_keystone"), "the forger receives the Keyst
 expect(mc.cmds.every((c) => !c.includes("undefined")), "no malformed commands");
 expect(mc.spawned.some(([id]) => id === "agartha:allfather"), "the All-Father stands at the Gates");
 
-// Raise the Gate with the Keystone.
-fire("playerInteractWithBlock", { player: p, block: { location: { x: 50, y: 63, z: 50 } }, itemStack: { typeId: "agartha:gate_keystone" }, isFirstEvent: true });
+// Using the Keystone in the air while looking at nothing just explains itself.
+fire("itemUse", { source: p, itemStack: { typeId: "agartha:gate_keystone" } });
+ticks(2);
+expect(p.log.some((e) => e[0] === "msg" && e[1].includes("Look at the ground")), "keystone in the air without a target explains itself");
+ticks(25);
+// Raise the Gate by tapping the ground with the Keystone (before-event, works on any block).
+const ev = { player: p, block: { location: { x: 50, y: 63, z: 50 } }, itemStack: { typeId: "agartha:gate_keystone" } };
+fire("before.playerInteractWithBlock", ev);
+ticks(2);
+expect(ev.cancel === true, "the tap is consumed by the Keystone");
 expect([...blocks.values()].filter((v) => v === "agartha:portal").length > 30, "the Heavenly Gate is raised with a portal");
 expect(!p.items.includes("agartha:gate_keystone"), "the Keystone is consumed");
 // A second keystone is refused.
@@ -71,12 +79,31 @@ p.location = { x: 0, y: 64, z: 0 };
 fire("playerSpawn", { player: p, initialSpawn: false });
 expect(!inRealm(p), "after dying in Agartha you respawn normally");
 
+// Building a Gate by hand: tear it down first, then place portal blocks.
+for (const [k, v] of [...blocks]) if (v === "agartha:portal" && Number(k.split(",")[0]) < 1000) blocks.delete(k);
+fire("playerBreakBlock", { player: p, brokenBlockPermutation: { type: { id: "agartha:portal" } }, dimension: dim });
+expect(p.items.includes("agartha:gate_keystone"), "tearing down the Gate returns the Keystone");
+for (const [x, y] of [[20, 64], [21, 64], [20, 65], [21, 65]]) {
+  blocks.set(`${x},${y},20`, "agartha:portal");
+  fire("playerPlaceBlock", { player: p, block: dim.getBlock({ x, y, z: 20 }), dimension: dim });
+}
+expect(p.log.some((e) => e[0] === "msg" && e[1].includes("founded here")), "the first hand-placed portal founds the Gate");
+expect([20, 21].every((x) => blocks.get(`${x},65,20`) === "agartha:portal"), "nearby portal blocks join the Gate");
+ticks(50);
+p.location = { x: 20.5, y: 64, z: 22.5 }; ticks(2);
+p.location = { x: 20.5, y: 64, z: 20.5 }; ticks(10);
+expect(inRealm(p), "walking through a hand-built Gate reaches Agartha");
+ticks(60);
+p.location = { x: OX + 0.5, y: B + 1, z: OZ + 189.5 }; ticks(2);
+expect(!inRealm(p) && Math.abs(p.location.z - 22.5) < 0.01, "and the exit brings you back to it");
+
 // Stray portal blocks are refused.
 blocks.set("500,64,500", "agartha:portal");
 fire("playerPlaceBlock", { player: p, block: dim.getBlock({ x: 500, y: 64, z: 500 }), dimension: dim });
 expect(blocks.get("500,64,500") === "minecraft:air", "portal blocks placed elsewhere are refused");
 
 // Tearing the Gate down returns its Keystone.
+p.items.length = 0;
 for (const [k, v] of [...blocks]) if (v === "agartha:portal" && Number(k.split(",")[0]) < 1000) blocks.delete(k);
 fire("playerBreakBlock", { player: p, brokenBlockPermutation: { type: { id: "agartha:portal" } }, dimension: dim });
 expect(p.items.includes("agartha:gate_keystone"), "the fallen Gate's Keystone returns");

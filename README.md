@@ -12,10 +12,15 @@ Agartha is the heaven of your world: a vast floating Hyperborean realm of snow, 
 Progress is saved. If forging is interrupted (you log off, the game closes) or some sections can't load, run `/scriptevent agartha:forge` again and it continues where it stopped.
 
 ## 2. Raising the Heavenly Gate (the one entrance)
-Use the **Keystone** on the ground where the entrance should stand. A quartz-and-ice archway with open golden gates rises there, facing you, with a glowing portal inside. Walk through it to arrive at the Gates of Agartha.
+Either way works:
+- **Keystone:** tap the ground with it, or use it while looking at the ground. A quartz-and-ice archway with open golden gates rises there, facing you, with a glowing portal inside.
+- **By hand:** take *Heavenly Gate of Agartha* portal blocks from the **Agartha** creative group and build your own frame. The first portal block you place founds the Gate; more blocks within 12 of it become part of it.
 
-- There is **only one Gate**. Portal blocks can't be placed anywhere else, and there's only one Keystone.
-- If the Gate is torn down completely, its **Keystone returns** to whoever broke the last of it, so the Gate can be raised again somewhere else.
+Walk through the Gate to arrive at the Gates of Agartha.
+
+- There is **only one Gate**. Portal blocks placed anywhere else are removed, and you're told where the Gate stands.
+- If the Gate is torn down completely, its **Keystone returns** to whoever broke the last of it, so the Gate can be raised again somewhere else. `/scriptevent agartha:gate_reset` also forgets it.
+- The Gate only leads somewhere once Agartha has been forged.
 
 ## 3. Leaving (the one exit)
 The **return portal** stands right behind the arrival point. Walk through it and you're returned to the exact spot you entered the Gate from, facing away from it. The exit can be broken like any block, but it **mends itself** within seconds, so nobody is ever trapped.
@@ -77,11 +82,11 @@ Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.6.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.6.0 (Behavior)** and **Agartha v1.6.0 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.6.1.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.6.1 (Behavior)** and **Agartha v1.6.1 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 
-In the creative inventory, all Agartha items (Keystone, Jarl's Axe, Mead Horn, Agartha Cloud) sit together in one collapsible **Agartha** group under *Items*.
+In the creative inventory, all Agartha items (Keystone, Heavenly Gate portal block, Jarl's Axe, Mead Horn, Agartha Cloud) sit together in one collapsible **Agartha** group under *Items*.
 
 ## Development
 | Command | Purpose |

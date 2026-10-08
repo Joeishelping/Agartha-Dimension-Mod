@@ -4,7 +4,8 @@
     "description": {
       "identifier": "agartha:portal",
       "menu_category": {
-        "category": "none"
+        "category": "items",
+        "group": "agartha:itemGroup.agartha"
       }
     },
     "components": {

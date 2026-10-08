@@ -421,22 +421,59 @@ function usePortal(player) {
 // Events
 // ---------------------------------------------------------------------------
 
-world.afterEvents.playerInteractWithBlock.subscribe(({ player, block, itemStack, isFirstEvent }) => {
-  if (isFirstEvent === false) return;
-  if (itemStack?.typeId === IDS.keystone) raiseGate(player, block);
+// The Keystone: tap a block with it, or use it while looking at the ground.
+// (Before-events fire for every attempt, even on blocks that do nothing.)
+const keystoneUsed = new Map();
+function useKeystone(player, block) {
+  const last = keystoneUsed.get(player.id) ?? -Infinity;
+  if (system.currentTick - last < 20) return;
+  keystoneUsed.set(player.id, system.currentTick);
+  if (!block) {
+    player.sendMessage("§7Look at the ground where the Heavenly Gate shall stand, then use the Keystone.");
+    return;
+  }
+  raiseGate(player, block);
+}
+
+world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
+  if (ev.itemStack?.typeId !== IDS.keystone) return;
+  ev.cancel = true;
+  const { player, block } = ev;
+  system.run(() => useKeystone(player, block));
 });
 
 world.afterEvents.itemUse.subscribe(({ source, itemStack }) => {
-  if (itemStack?.typeId !== IDS.keystone || gate()) return;
-  source.sendMessage("§7Use the Keystone on the ground where the Heavenly Gate shall stand.");
+  if (itemStack?.typeId !== IDS.keystone) return;
+  let hit;
+  try {
+    hit = source.getBlockFromViewDirection({ maxDistance: 12 })?.block;
+  } catch {
+    hit = undefined;
+  }
+  useKeystone(source, hit);
 });
 
-// Portal blocks only belong to the Gate and the exit.
+// Portal blocks: the first one placed in the mortal world founds the one
+// Heavenly Gate; more within reach of it extend it; anywhere else is refused.
+const GATE_REACH = 12;
 world.afterEvents.playerPlaceBlock.subscribe(({ player, block, dimension }) => {
   if (block.typeId !== IDS.portal) return;
   if (overRealmFootprint({ dimension, location: block.location })) return; // mending the exit is fine
+  const loc = { x: block.location.x, y: block.location.y, z: block.location.z };
+  const g = gate();
+  if (!g) {
+    world.setDynamicProperty(GATE_KEY, JSON.stringify({ ...loc, dim: dimension.id, axis: "z", portal: [loc] }));
+    player.sendMessage("§6The Heavenly Gate has been founded here. §7Fill its frame with portal blocks; walk through to reach Agartha.");
+    return;
+  }
+  const near = g.dim === dimension.id && Math.max(Math.abs(g.x - loc.x), Math.abs(g.y - loc.y), Math.abs(g.z - loc.z)) <= GATE_REACH;
+  if (near) {
+    g.portal = [...(g.portal ?? []), loc];
+    world.setDynamicProperty(GATE_KEY, JSON.stringify(g));
+    return;
+  }
   block.setType("minecraft:air");
-  player.sendMessage("§cThere is only one way into Agartha: the Heavenly Gate.");
+  player.sendMessage(`§cThere is only one way into Agartha: the Heavenly Gate at ${g.x} ${g.y} ${g.z}.`);
 });
 
 // If the Gate is torn down completely, its Keystone returns to whoever did it.
