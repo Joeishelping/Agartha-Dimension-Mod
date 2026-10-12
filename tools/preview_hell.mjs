@@ -10,7 +10,7 @@ import { hellTileOps } from "../behavior_pack/scripts/hell_blueprint.js";
 
 const out = process.argv[2] ?? "dist/preview";
 mkdirSync(out, { recursive: true });
-const X0 = -66, X1 = 66, Z0 = -26, Z1 = 150, Y0 = HELL.minY, Y1 = HELL.maxY;
+const X0 = HELL.shell.minX - 2, X1 = HELL.shell.maxX + 2, Z0 = HELL.shell.minZ - 2, Z1 = HELL.shell.maxZ + 2, Y0 = HELL.minY, Y1 = HELL.maxY;
 const NX = X1 - X0 + 1, NZ = Z1 - Z0 + 1, NY = Y1 - Y0 + 1;
 const vox = new Uint8Array(NX * NZ * NY); // 0 = untouched (natural rock), 1 = air
 const idx = (x, y, z) => ((x - X0) * NZ + (z - Z0)) * NY + (y - Y0);
@@ -22,7 +22,7 @@ const C = {
   deepslate: [52, 52, 58], deepslate_tiles: [44, 44, 50], deepslate_bricks: [58, 58, 64], polished_deepslate: [70, 70, 76], cobbled_deepslate: [80, 80, 86],
   cracked_deepslate_bricks: [96, 90, 80], blackstone: [40, 36, 42], polished_blackstone: [54, 50, 58], polished_blackstone_bricks: [48, 44, 52],
   cracked_polished_blackstone: [60, 56, 62], chiseled_polished_blackstone: [66, 60, 70], gilded_blackstone: [150, 110, 40], polished_basalt: [74, 74, 80], basalt: [70, 70, 76],
-  black_concrete: [14, 14, 18], black_stained_glass: [24, 24, 30], tinted_glass: [40, 34, 48], gray_stained_glass: [90, 90, 96], red_stained_glass: [160, 30, 30],
+  black_concrete: [14, 14, 18], red_nether_brick: [110, 20, 20], nether_brick: [60, 26, 30], netherrack: [120, 40, 40], fire: [255, 170, 40], coarse_dirt: [100, 72, 52], black_wool: [20, 20, 20], black_stained_glass: [24, 24, 30], tinted_glass: [40, 34, 48], gray_stained_glass: [90, 90, 96], red_stained_glass: [160, 30, 30],
   crying_obsidian: [90, 30, 150], magma: [230, 90, 20], lava: [255, 120, 20], soul_soil: [80, 62, 50], soul_sand: [90, 70, 56], bone_block: [220, 214, 190], skeleton_skull: [230, 230, 220],
   soul_fire: [90, 230, 240], soul_campfire: [90, 230, 240], soul_lantern: [110, 240, 250], soul_torch: [110, 240, 250], shroomlight: [255, 160, 70], iron_bars: [150, 150, 150], chain: [120, 120, 130],
   packed_ice: [130, 160, 210], calcite: [222, 222, 214], gold_block: [240, 200, 60], redstone_block: [200, 20, 20], white_wool: [240, 240, 240], pointed_dripstone: [130, 100, 80], dripstone_block: [120, 92, 74],
@@ -105,32 +105,34 @@ function view(name, W, H, S, start, step, maxDepth) {
 // 1. Section through the pit and the Spire, looking east (cut at x = 0).
 view("hell_section_x0", NZ, NY, 4, (u, v) => [0, Y1 - v, Z0 + u], [1, 0, 0], 70);
 // 2. Section across the cavern, looking north (cut at z = 88).
-view("hell_section_z88", NX, NY, 4, (u, v) => [X0 + u, Y1 - v, 88], [0, 0, 1], 60);
-// 3. Plan of the lake level, looking down from y = -30.
-view("hell_plan_lake", NX, NZ, 4, (u, v) => [X0 + u, -30, Z0 + v], [0, -1, 0], 20);
+view("hell_section_z88", 130, NY, 4, (u, v) => [-64 + u, Y1 - v, 88], [0, 0, 1], 60);
+// 3. Plan of everything, looking down from y = 0 (the City of Dis, the lake, the pit).
+view("hell_plan_all", NX, NZ, 3, (u, v) => [X0 + u, 0, Z0 + v], [0, -1, 0], 60);
 // 4. Plan of the Hall of Thrones, looking down from just under its vault.
-view("hell_plan_hall", NX, NZ, 4, (u, v) => [X0 + u, 15, Z0 + v], [0, -1, 0], 14);
+view("hell_plan_hall", 130, 120, 4, (u, v) => [-64 + u, 15, 30 + v], [0, -1, 0], 14);
 // 5. Plan of the pit, looking down from its ceiling.
-view("hell_plan_pit", 40, 40, 10, (u, v) => [-20 + u, 26, -20 + v], [0, -1, 0], 90);
-// 6. Section through the pit looking west (cut at x = 0, other half).
-view("hell_section_pit", 34, 90, 6, (u, v) => [0, 28 - v, -17 + u], [-1, 0, 0], 20);
+view("hell_plan_pit", 44, 44, 9, (u, v) => [-22 + u, 26, -22 + v], [0, -1, 0], 90);
+// 6. Plan of the City of Dis from just under its roof.
+view("hell_plan_dis", 170, 166, 4, (u, v) => [65 + u, 18, -53 + v], [0, -1, 0], 40);
+// 7. Section through Dis, looking north (cut at z = 30, along the avenue).
+view("hell_section_dis", 180, 50, 4, (u, v) => [60 + u, 30 - v, 30], [0, 0, 1], 60);
 
 // 7. The pit's wall unrolled: angle across, height down. Nearer = brighter,
 // so the spiral path, the Gates of the Hours and the stepping stones stand out.
 {
-  const W = 720, H = 88, S = 2, VS = 5;
+  const W = 900, H = 88, S = 2, VS = 5;
   const px = new Uint8Array(W * S * H * VS * 3);
   for (let v = 0; v < H; v++) {
     const y = 27 - v;
     for (let u = 0; u < W; u++) {
       const a = (u / W) * Math.PI * 2;
       let rgb = [0, 0, 0];
-      for (let r = 6.9; r < 16; r += 0.25) {
+      for (let r = 10.9; r < 21; r += 0.25) {
         const b = get(Math.floor(r * Math.cos(a)), y, Math.floor(r * Math.sin(a)));
         if (solid(b) || b === 0) {
           const p = palette[b] ?? { rgb: [20, 18, 22] };
-          const k = p.glow ? 1.2 : Math.max(0.35, 1.6 - r / 9);
-          rgb = p.rgb.map((c) => Math.min(255, c * k + (r < 10.4 && !p.glow ? 40 : 0)));
+          const k = p.glow ? 1.2 : Math.max(0.35, 1.6 - r / 13);
+          rgb = p.rgb.map((c) => Math.min(255, c * k + (r < 15.4 && !p.glow ? 40 : 0)));
           break;
         }
       }

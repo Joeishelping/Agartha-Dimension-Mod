@@ -72,6 +72,8 @@ const ALIASES = {
   "minecraft:blue_wool": [["minecraft:wool", { color: "blue" }]],
   "minecraft:dark_oak_fence": [["minecraft:fence", { wood_type: "dark_oak" }]],
   "minecraft:chain": [["minecraft:iron_chain", {}]],
+  "minecraft:red_nether_bricks": [["minecraft:red_nether_brick", {}]],
+  "minecraft:nether_bricks": [["minecraft:nether_brick", {}]],
   "minecraft:skeleton_skull": [["minecraft:skull", {}]],
   "minecraft:crimson_wall_sign": [["minecraft:wall_sign", {}]],
 };

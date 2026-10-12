@@ -7,7 +7,7 @@ import * as L from "../behavior_pack/scripts/hell_layout.js";
 
 let fails = 0;
 const check = (c, m) => { if (!c) { fails++; if (fails < 30) console.error("FAIL:", m); } };
-const X0 = -100, Z0 = -45, Y0 = HELL.minY, NX = 200, NZ = 200, NY = HELL.maxY - HELL.minY + 1;
+const X0 = HELL.shell.minX - 2, Z0 = HELL.shell.minZ - 2, Y0 = HELL.minY, NX = HELL.shell.maxX - HELL.shell.minX + 5, NZ = HELL.shell.maxZ - HELL.shell.minZ + 5, NY = HELL.maxY - HELL.minY + 1;
 const vox = new Uint8Array(NX * NZ * NY);
 const ids = ["?", "air"];
 const code = new Map([["minecraft:air", 1]]);
@@ -74,14 +74,34 @@ for (let i = 1; i < L.STONES.length; i++) {
 }
 for (const p of L.HIDDEN_PROFILE.slice(1)) room(p.x, Math.ceil(p.y), p.z, `hidden tunnel t=${p.t}`); // t=0 is the crack itself
 check(at(L.HIDDEN_TUNNEL.crack.x, L.CRACK_LEDGE.y, L.HIDDEN_TUNNEL.crack.z) === "minecraft:cracked_deepslate_bricks", "the hidden tunnel is sealed by cracked bricks");
-// The road from the Twelfth Gate and the bridge to the Spire.
-for (const [x, z] of [[-4, 12], [-4, 20], [0, 20], [0, 30], [0, 37]]) { room(x, L.TOP_TUNNEL.y, z, "top tunnel"); floor(x, L.TOP_TUNNEL.y, z, "top tunnel"); }
-for (let z = L.BRIDGE.fromZ; z < L.BRIDGE.toZ; z++) {
-  const s = L.BRIDGE.fromY - 0.5 * (z - L.BRIDGE.fromZ);
-  for (const x of [-1, 0, 1]) { room(x, s, z, "bridge"); floor(x, s, z, "bridge"); }
+// The Road of Ashes from the Twelfth Gate to the west gate of Dis.
+for (const p of L.ASCENT_PROFILE) { room(p.x, Math.ceil(p.y), p.z, `road of ashes t=${p.t}`); floor(p.x, p.y % 1 ? p.y : Math.ceil(p.y), p.z, `road of ashes t=${p.t}`); }
+room(L.DIS_WEST_GATE.x, L.DIS.floorY, L.DIS_WEST_GATE.z, "west gate of Dis");
+// Dis: the avenue, the bridges, the seals, the inner gate (shut), the Throat.
+for (let x = L.DIS_WEST_GATE.x; x < L.riverX(L.DIS.z) - L.RIVER_HALF - 2; x += 3) room(x, L.DIS.floorY, L.DIS.z, `avenue x=${x}`);
+for (const b of L.BRIDGES) for (const c of L.bridgeCells(b)) if (!c.edge) { room(c.x, L.DIS.floorY, c.z, `${b.name}`); floor(c.x, L.DIS.floorY, c.z, `${b.name}`); }
+for (const s of L.SEALS) check(at(s.x, s.y, s.z) === "minecraft:crying_obsidian", `${s.name} altar`);
+for (const s of L.SEALS) {
+  const ok = [[2, 0], [-2, 0], [0, 2], [0, -2], [1, 1], [-1, -1]].some(([dx, dz]) => clear(s.x + dx, s.y, s.z + dz) && clear(s.x + dx, s.y + 1, s.z + dz) && !clear(s.x + dx, s.y - 1, s.z + dz));
+  check(ok, `somewhere to stand by ${s.name}`);
 }
-room(0, L.SPIRE.hallY, L.SPIRE.minZ, "hall door");
+const gate = L.innerGateCells();
+check(gate.every((g) => !clear(g.x, g.y, g.z) || at(g.x, g.y, g.z).includes("iron_bars")), "the inner gate of Dis is shut");
+check(gate.filter((g) => typeof g.kind === "number").every((g) => at(g.x, g.y, g.z) === "minecraft:crying_obsidian"), "three locks on the inner gate");
+const tr = L.THROAT_ROAD.points;
+for (const [x, z] of [tr[1], [Math.round((tr[1][0] + tr[2][0]) / 2), tr[2][1]], tr[2]]) room(x, L.DIS.floorY, z, "road to the Throat");
+const TH = L.THROAT;
+const throatTops = new Map();
+wallStair(TH.minX + 1, TH.maxX - 1, TH.minZ + 1, TH.maxZ - 1, TH.topY, TH.bottomY, 2, (x, z, y) => throatTops.set(`${x},${z}`, [x, z, Math.max(y, throatTops.get(`${x},${z}`)?.[2] ?? -999)]), { startAt: [TH.maxX - 1, TH.doorZ], down: true });
+for (const [x, z, y] of throatTops.values()) room(x, y, z, `throat stair y=${y}`);
+for (let x = L.THROAT_TUNNEL.toX; x < L.THROAT_TUNNEL.fromX; x += 4) { room(x, L.CAVERN.lakeY, L.THROAT_TUNNEL.z, "tunnel to the lake"); floor(x, L.CAVERN.lakeY, L.THROAT_TUNNEL.z, "tunnel to the lake"); }
+// The Tower of the Furies' stair.
+const FT = L.FURY_TOWER;
+const towerTops = new Map();
+wallStair(FT.minX + 1, FT.maxX - 1, FT.minZ + 1, FT.maxZ - 1, L.DIS.floorY + 0.5, FT.topY + 1.01, 2, (x, z, y) => towerTops.set(`${x},${z}`, [x, z, Math.max(y, towerTops.get(`${x},${z}`)?.[2] ?? -999)]));
+for (const [x, z, y] of towerTops.values()) room(x, y, z, `fury tower stair y=${y}`);
 room(0, L.SPIRE.hallY, L.SPIRE.minZ + 1, "hall door");
+room(0, L.SPIRE.hallY, L.SPIRE.minZ - 2, "the balcony");
 room(0, L.CAVERN.lakeY + 1, L.SPIRE.minZ, "base door");
 check(at(0, L.CAVERN.lakeY, L.SPIRE.minZ - 2).includes("slab"), "a half step up from the ice to the Spire's door");
 room(Math.floor(L.DEVIL_SPOT.x), L.DEVIL_SPOT.y, Math.floor(L.DEVIL_SPOT.z), "the Devil's spot");

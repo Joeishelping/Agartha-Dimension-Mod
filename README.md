@@ -74,24 +74,41 @@ Where Agartha is light, ice and ascent above the clouds, Hell is the floor of th
 2. **Open the Hellmouth**: use the Heart Scarab on the ground. A weeping, horned beast's head of blackstone rises, its jaws held open around the portal. It's the one way down. If it's sealed (every portal block broken), the Scarab returns.
 3. **Walk into its jaws.** Every soul arrives at the very bottom of the pit.
 
-### Layer 1: the Oubliette of Entropic Recurrence
-An 80-block pit of blackstone and deepslate, with weeping walls, caged gibbets on chains, bone and soul fire on the floor, and an obelisk on a heart of magma that warns *Abandon all hope, ye who enter here*. A crumbling slab spiral climbs the wall for nearly three turns past the **twelve Gates of the Hours**. Each Gate is an alcove with a pylon frame, an inscription and a button.
+Hell is about three times larger than Agartha's first underworld: a pit, a city, and a cavern, one after another. Its creatures are custom ones, so they hunt you **on any difficulty, even Peaceful**.
+
+### Layer I: the Oubliette of Entropic Recurrence
+A pit 80 blocks deep and 31 across, of blackstone and deepslate, with weeping walls, caged gibbets on chains, bone and soul fire on the floor, and an obelisk on a heart of magma that warns *Abandon all hope, ye who enter here*. A slab spiral of **320 steps** climbs the wall for nearly four turns past the **twelve Gates of the Hours**. Each Gate is an alcove with a pylon frame, an inscription and a button.
 
 - **The lava rises.** A few seconds after you arrive the floor begins to burn, and the lava climbs the shaft steadily. **The button at any Gate flushes it** back to the floor, but the noise wakes the damned: a wave comes for you.
-- **Spike traps** burst from some steps. Each trap covers only *some* of the path's three lanes and never the same ones twice, so the darker steps warn you and there is always a way past. They're lethal.
+- **Spike traps** (24) burst from some steps. Each covers only *some* of the path's three lanes and never the same ones twice, so the darker steps warn you and there is always a way past. They're lethal.
+- **Arrow slits** in the walls shoot at whoever climbs past.
+- **Vents of soul fire** breathe in a rhythm: a hiss, then a column of flame. Time your crossing.
 - **Crumbling steps** give way under anyone who lingers, and grow back later. Some steps are simply missing: jump.
-- **Waves of the damned** come every so often: zombies and skeletons low down, then wither skeletons and vexes, then blazes near the top. More come the higher you are and the more times you've climbed.
-- **Climbing souls**, translucent and hollow-eyed, crawl up the spiral beside you, lose their grip and fall wailing back into the dark. Get close and they whisper.
-- **Dying anywhere in Hell sends you back to the very bottom** ("AGAIN, ascent N"). Hell remembers: how many times you've climbed, how you died ("You remember the burning."), and where ("You died here."). You can't dig or build your way out: nothing breaks except cracked bricks, and nothing you place stays. Lava that washes away a Gate's button or inscription is mended once it drains.
-- **The hidden way:** past the seventh Gate, stepping stones hang over the void. Climb them back the way you came, leap to a ledge, and break through the cracked bricks. A dark tunnel with pools of lava to jump winds down to the frozen lake below.
+- **The souls are not your friends.** Sixteen translucent, hollow-eyed souls crawl up the spiral beside you. Get too close and one **seizes you and tries to throw you off the stair** into the void, then falls away wailing. They whisper, too.
+- **Waves of the damned**: the **Damned** (charred walkers that claw and slow you) and **hellhounds** (fast; they leap, and their bite sets you alight), with champions higher up. In the upper Hours, **Furies** come down out of the dark.
+- **Dying anywhere in Hell sends you back to the very bottom** ("AGAIN, ascent N"). Hell remembers how many times you've climbed, how you died ("You remember the burning.") and where ("You died here."). You can't dig or build your way out: nothing breaks except cracked bricks, and nothing you place stays.
+- **The hidden way:** halfway up, stepping stones hang over the void. Climb them back the way you came, leap to a ledge in the east wall, and break through the cracked bricks. A dark tunnel with lava to jump runs straight into the City of Dis, past its outer wall.
 
-### Layer 2: the Spire of Absolute Contract
-At the top, the Twelfth Gate opens on a road to a vast silent cavern. A black bridge with no rails descends over **Cocytus**, a frozen lake of black ice where the damned are frozen with only their skulls showing, and the coils of **Apep** arch out of the ice. In its centre stands **the Spire**: brutalist matte-black walls, tinted-glass windows, cold soul light.
+### Layer II: the City of Dis
+At the top, the Twelfth Gate opens on **the Road of Ashes**, lined with bones, down to the west gate of **Dis**: Dante's burning city, behind red-hot iron walls with twelve towers, in a cavern 160 blocks across. The river of fire, the **Phlegethon**, winds through it.
 
-- **The Hall of Thrones**: forty-two empty thrones of the judges of the dead in two tiers, braziers of soul fire, the **Scale of Two Truths** (heart against feather) with **Ammit** crouched beside it, and the Devil's horned throne under a rose window. Walk up to the scale and **your heart is weighed**: light if you climbed without dying more than once, heavy otherwise.
+- **The Field of Tombs**: the burning graves of the heretics, lids thrown aside, among ruins and the half-buried crowned head of **a fallen king**.
+- **Three Seals bind the inner Gate of Dis.** Stand at a Seal's altar and hold your ground for six seconds to break it, while its guardians come for you:
+  - **The Seal of Ash**, in the Mausoleum among the tombs. The tombs burst open.
+  - **The Seal of Wind**, atop the **Tower of the Furies**. The Furies come home.
+  - **The Seal of Teeth**, in the den of **Garm**, the giant hound of Hel, in the Kennel across the river. Garm wakes, and the pack with him.
+  Each broken Seal shatters a lock on the Gate. Break all three and the Gate opens.
+- **The Bridge of Sighs** crumbles into the river behind whoever runs across it (it rises again later). **The Bridge of Teeth** is lined with skulls.
+- The Damned and the hounds roam the streets; **Furies** circle overhead, shriek, and dive through walls at you (kill them as they come). The river spits geysers of fire. Now and then **dread** falls on the city: darkness, and something comes from behind. And sometimes, far off, **the Watcher** stands and looks at you. Stare too long, or come too near, and it is gone.
+- The Seals stay broken while anyone is in Hell. When everyone has left, they mend and the Gate shuts.
+
+### Layer III: the Spire of Absolute Contract
+Beyond the Gate, **the Throat**, a square shaft, spirals down to a tunnel and the shore of a vast silent cavern. Here lies **Cocytus**, a frozen lake of black ice where the damned are frozen with only their skulls showing, and the coils of **Apep** arch out of the ice. In its centre stands **the Spire**: brutalist matte-black walls, tinted-glass windows, cold soul light. Enter at its base and climb the stair inside.
+
+- **The Hall of Thrones**: forty-two empty thrones of the judges of the dead in two tiers, braziers of soul fire, the **Scale of Two Truths** (heart against feather) with **Ammit** crouched beside it, and the Devil's horned throne under a rose window. Walk up to the scale and **your heart is weighed**: light if you died no more than twice on the way, heavy otherwise.
 - **The Inverse Cathedral** hangs upside down from the roof of the cavern, its spire pointing down at the ice.
 - **The Clocktower of Reversion**: its hands turn **backwards**, ticking across the lake.
-- Silence: almost no sound but the clock, a low breath, and Agartha's heavenly choir played backwards an octave down. No monsters in Layer 2.
+- Silence: almost no sound but the clock, a low breath, and Agartha's heavenly choir played backwards an octave down. Nothing hunts you here.
 
 ### The Devil, Keeper of the Contract
 He doesn't fight. **Talk to him** and he remembers how many times you climbed and how your heart weighed. Ask who he is and what this place is. The only way out is a **Deal**:
@@ -110,9 +127,14 @@ You're released back to where you entered the Hellmouth.
 
 | | |
 |---|---|
-| ![Hell in section: the pit (left) and the Spire over the frozen lake](docs/hell_section.png) | ![The frozen lake from above: Apep's coils, the Spire, the Clocktower](docs/hell_lake.png) |
+| | |
+|---|---|
+| ![All of Hell from above: the pit (top left), the City of Dis (right), the frozen lake and the Spire (bottom left)](docs/hell_plan.png) | ![The City of Dis: walls and towers, the river of fire, the Mausoleum, the Tower of the Furies, the Kennel and Garm's den](docs/hell_dis.png) |
+| ![Looking north through Dis: the red-hot walls](docs/hell_dis_section.png) | ![The pit and the Spire in section](docs/hell_section.png) |
 
 ![The pit's wall unrolled: the spiral climbing past the Gates of the Hours](docs/hell_pit.png)
+
+![A hellhound, a Fury, one of the Damned](docs/hell_creatures.png)
 
 *(Cutaway previews from `tools/preview_hell.mjs`, not in-game screenshots.)*
 
@@ -137,12 +159,12 @@ You're released back to where you entered the Hellmouth.
 | `/scriptevent agartha:hell_release` | Release yourself from Hell (for operators). |
 
 ## Safety
-Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket of the Overworld sky centred on X 99,890 / Z 100,298. **Every block the forge writes is bounds-checked** against one reserved box (X 99,536 → 100,239, Z 99,936 → 100,639, Y 96 → 319), and world generation is never changed. `tools/test_blueprint.mjs` verifies all ~820,000 build operations stay inside. Hell is carved inside a second reserved box deep beneath it (X 99,792 → 99,983, Z 100,256 → 100,447, Y -63 → 34), from a sealed shell of deepslate: everything natural inside that shell (stone, ores, caves) is replaced, and nothing outside it is touched. The only things built outside the two boxes are the Heavenly Gate and the Hellmouth, where *you* choose to raise them.
+Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket of the Overworld sky centred on X 99,890 / Z 100,298. **Every block the forge writes is bounds-checked** against one reserved box (X 99,536 → 100,239, Z 99,936 → 100,639, Y 96 → 319), and world generation is never changed. `tools/test_blueprint.mjs` verifies all ~820,000 build operations stay inside. Hell is carved inside a second reserved box deep beneath it (X 99,856 → 100,175, Z 100,192 → 100,447, Y -63 → 34), from a sealed shell of deepslate: everything natural inside that shell (stone, ores, caves) is replaced, and nothing outside it is touched. The only things built outside the two boxes are the Heavenly Gate and the Hellmouth, where *you* choose to raise them.
 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v2.0.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v2.0.0 (Behavior)** and **Agartha v2.0.0 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v2.1.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v2.1.0 (Behavior)** and **Agartha v2.1.0 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 
@@ -157,9 +179,10 @@ In the creative inventory, all Agartha items (Keystone, Heavenly Gate portal blo
 | `python3 tools/gen_textures.py` | Regenerates textures, including the default All-Father skin. |
 | `python3 tools/gen_sounds.py` | Re-synthesizes the soundscape (needs numpy and ffmpeg). |
 | `python3 tools/gen_choir.py` | Re-synthesizes the two-minute choir loop (needs numpy and ffmpeg). |
-| `node tools/smoke_hell.mjs` | Walks a soul through Hell against the mock API: forging, the Hellmouth, lava, spikes, crumbling steps, buttons, waves, souls, glyphs, death and recurrence, the weighing, the clock, and every Deal. |
+| `node tools/smoke_hell.mjs` | Walks a soul through Hell against the mock API: forging, the Hellmouth, lava, spikes, arrow slits, fire vents, grasping souls, crumbling steps, buttons, waves, glyphs, death and recurrence; the City of Dis (its hunters, a Fury's dive, all three Seals and their guardians, the Gate opening, the Bridge of Sighs falling); the weighing, the clock, and every Deal. |
+| `node tools/test_hell.mjs` | Checks every Hell operation stays inside its box, and that every walkway (the spiral, the roads, the bridges, every stair) has room to stand. |
 | `node tools/preview_hell.mjs && python3 tools/ppm2png.py` | Renders cutaway sections and plans of Hell into `dist/preview/`. |
-| `python3 tools/gen_hell_assets.py` | Regenerates the Devil's model and skin, the souls' skin, the Hellmouth portal and the Scarab icon. |
+| `python3 tools/gen_hell_assets.py` | Regenerates the Devil's model and skin (also worn by the Furies and the Watcher), the hellhound's model, the skins of the souls and the Damned, the Hellmouth portal and the Scarab icon. |
 | `cd tools && python3 gen_hell_sounds.py` | Re-synthesizes Hell's sounds (needs numpy and ffmpeg). |
 
-The layout lives in `behavior_pack/scripts/terrain.js` (`LAYOUT`), the landmarks in `structures.js` and `citadel.js`, and location and heights in `config.js`. Bump `buildVersion` to rebuild existing worlds after changes. Hell's geometry is in `hell_layout.js` (shared by the blueprint and the runtime), its blocks in `hell_blueprint.js`, its gameplay in `hell.js`, its sound and air in `hell_ambience.js`, and the Devil's dialogue in `devil.js`.
+The layout lives in `behavior_pack/scripts/terrain.js` (`LAYOUT`), the landmarks in `structures.js` and `citadel.js`, and location and heights in `config.js`. Bump `buildVersion` to rebuild existing worlds after changes. Hell's geometry is in `hell_layout.js` (shared by the blueprint and the runtime), its blocks in `hell_blueprint.js`, its gameplay in `hell.js` (the pit, the loop, the Spire), `hell_dis.js` (the City of Dis) and `hell_creatures.js` (the Damned, hellhounds, Furies, the Watcher), its sound and air in `hell_ambience.js`, and the Devil's dialogue in `devil.js`.

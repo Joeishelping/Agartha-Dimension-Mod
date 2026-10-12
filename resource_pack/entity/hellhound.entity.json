@@ -1,0 +1,32 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "agartha:hellhound",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/hellhound"
+      },
+      "geometry": {
+        "default": "geometry.agartha.hellhound"
+      },
+      "animations": {
+        "look_at_target": "animation.common.look_at_target",
+        "walk": "animation.agartha.hound.walk",
+        "tail": "animation.agartha.hound.tail"
+      },
+      "scripts": {
+        "animate": [
+          "look_at_target",
+          "walk",
+          "tail"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

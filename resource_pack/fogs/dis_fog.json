@@ -1,0 +1,28 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "agartha:dis_fog"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 8,
+        "fog_end": 90,
+        "fog_color": "#2A0B05",
+        "render_distance_type": "fixed"
+      },
+      "weather": {
+        "fog_start": 8,
+        "fog_end": 90,
+        "fog_color": "#2A0B05",
+        "render_distance_type": "fixed"
+      },
+      "lava": {
+        "fog_start": 0,
+        "fog_end": 2,
+        "fog_color": "#FF4A00",
+        "render_distance_type": "fixed"
+      }
+    }
+  }
+}

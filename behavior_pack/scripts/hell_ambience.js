@@ -3,6 +3,8 @@
 //  * The pit: a groaning drone that never stops, wails echoing across the
 //    shaft, whispers, distant moans; a heartbeat when the lava is close below;
 //    ash falling, embers rising off the lava, soul-wisps drifting.
+//  * The City of Dis: a far-off crowd of the damned, howls and shrieks, a
+//    cracked bell; ash, embers and dripping blood.
 //  * The Spire: almost silence. A low, cold breath of sound; the clock
 //    ticking backwards across the lake; the odd sound from the deep caves.
 //    Ash falls slowly; cold mist creeps over the black ice.
@@ -72,6 +74,29 @@ export function hellAmbience(player, tick, zone, lavaLevel) {
     }
     if (due(player, "ash", tick, 8)) fx(dim, "agartha:hell_ash", at(rnd(-5, 5), 10, rnd(-5, 5)));
     if (due(player, "wisp", tick, 30)) fx(dim, "agartha:soul_wisp", at(rnd(-6, 6), rnd(-4, 2), rnd(-6, 6)));
+    return;
+  }
+
+  if (zone === "dis") {
+    // The burning city: a crowd of the damned far off, iron groaning, howls,
+    // shrieks overhead, a cracked bell tolling; ash and embers, red drips.
+    if (due(player, "bed", tick, BED_TICKS)) player.playSound("agartha.dis_bed", { volume: 1 });
+    if (due(player, "howl", tick, rnd(20, 40) * 20, 20 * 8)) {
+      const a = rnd(0, Math.PI * 2);
+      sound(dim, "agartha.hound_howl", at(Math.cos(a) * 30, 2, Math.sin(a) * 30), { volume: 3, pitch: rnd(0.7, 1) });
+    }
+    if (due(player, "shriek", tick, rnd(30, 60) * 20, 20 * 20)) {
+      const a = rnd(0, Math.PI * 2);
+      sound(dim, "agartha.fury_shriek", at(Math.cos(a) * 25, 15, Math.sin(a) * 25), { volume: 3, pitch: rnd(0.8, 1.1) });
+    }
+    if (due(player, "moan", tick, rnd(10, 22) * 20, 20 * 3)) {
+      const a = rnd(0, Math.PI * 2);
+      sound(dim, "agartha.damned_moan", at(Math.cos(a) * 14, 0, Math.sin(a) * 14), { volume: 1.5, pitch: rnd(0.7, 1) });
+    }
+    if (due(player, "bell", tick, rnd(40, 80) * 20, 20 * 25)) player.playSound("block.bell.hit", { volume: 0.4, pitch: 0.5 });
+    if (due(player, "ash", tick, 8)) fx(dim, "agartha:hell_ash", at(rnd(-6, 6), 10, rnd(-6, 6)));
+    if (due(player, "embers", tick, 10)) fx(dim, "agartha:hell_embers", at(rnd(-8, 8), -1, rnd(-8, 8)));
+    if (due(player, "blood", tick, 14)) fx(dim, "agartha:blood_drip", at(rnd(-8, 8), 8, rnd(-8, 8)));
     return;
   }
 

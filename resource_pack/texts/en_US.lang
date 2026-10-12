@@ -12,3 +12,7 @@ item.agartha.heart_scarab=Heart Scarab of the Duat
 entity.agartha:devil.name=The Keeper of the Contract
 entity.agartha:soul.name=Climbing Soul
 entity.agartha:allfather.name=The All-Father
+entity.agartha:damned.name=The Damned
+entity.agartha:hellhound.name=Hellhound
+entity.agartha:fury.name=Fury
+entity.agartha:watcher.name=The Watcher

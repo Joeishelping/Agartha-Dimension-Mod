@@ -1,0 +1,41 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "agartha:damned": {
+        "volume": 1.0,
+        "pitch": [
+          0.8,
+          1.1
+        ],
+        "events": {
+          "ambient": "agartha.damned_moan",
+          "hurt": "agartha.damned_hurt",
+          "death": "agartha.damned_death"
+        }
+      },
+      "agartha:hellhound": {
+        "volume": 1.0,
+        "pitch": [
+          0.8,
+          1.2
+        ],
+        "events": {
+          "ambient": "agartha.hound_growl",
+          "hurt": "agartha.hound_hurt",
+          "death": "agartha.hound_death"
+        }
+      },
+      "agartha:fury": {
+        "volume": 1.0,
+        "pitch": [
+          0.9,
+          1.2
+        ],
+        "events": {
+          "hurt": "agartha.fury_shriek",
+          "death": "agartha.fury_shriek"
+        }
+      }
+    }
+  }
+}

@@ -43,7 +43,7 @@ expect(p.log.some((e) => e[0] === "tp" && e[1].y === -10), "the forger was carri
 const fills = mc.cmds.filter((c) => c.startsWith("fill"));
 expect(fills.some((c) => /minecraft:polished_blackstone_bricks|deepslate/.test(c)), `the deep was carved (${fills.length} fills)`);
 const ys = fills.map((c) => c.split(" ").map(Number)).flatMap((a) => [a[2], a[5]]);
-expect(Math.min(...ys) >= HELL.minY && Math.max(...ys) <= HELL.maxY, "everything Hell writes stays inside its slice of the deep");
+expect(ys.reduce((a, b) => Math.min(a, b), 999) >= HELL.minY && ys.reduce((a, b) => Math.max(a, b), -999) <= HELL.maxY, "everything Hell writes stays inside its slice of the deep");
 
 // --- The Hellmouth ---------------------------------------------------------
 p.lookingAt = { x: 510, y: 69, z: 500 };
@@ -77,7 +77,7 @@ const lv = () => Math.max(...mc.cmds.filter((c) => c.includes(" lava replace air
 const lv1 = lv();
 ticks(20 * 10);
 expect(lv() > lv1, `the lava keeps rising (Y ${lv1} -> ${lv()})`);
-expect(mc.entities.filter((e) => e.isValid && e.typeId === "agartha:soul").length === 8, "eight souls climb the spiral");
+expect(mc.entities.filter((e) => e.isValid && e.typeId === "agartha:soul").length === 16, "sixteen souls climb the spiral");
 const soul = mc.entities.find((e) => e.typeId === "agartha:soul");
 const soulAt = { ...soul.location };
 ticks(20);
@@ -127,6 +127,30 @@ stand(p, g1.x + 1.5, g1.y, g1.z + 0.5);
 ticks(12);
 expect((prop(p, "glyphs") & 1) === 1 && titles(p).some((x) => x.includes("AZ")), "a glyph in the dark teaches the first syllable");
 
+// --- The new terrors of the pit -----------------------------------------------
+// Arrow slits shoot at a climber.
+const arrowsBefore = mc.entities.filter((e) => e.typeId === "minecraft:arrow").length;
+const sl = L.SLITS[5];
+stand(p, Math.round(sl.x * 0.85) + 0.5, sl.y - 1, Math.round(sl.z * 0.85) + 0.5);
+ticks(20 * 6);
+const arrows = mc.entities.filter((e) => e.typeId === "minecraft:arrow");
+expect(arrows.length > arrowsBefore && arrows.some((a) => a.impulse), `arrow slits shoot at you (${arrows.length - arrowsBefore} arrows)`);
+// A vent of soul fire erupts under you.
+const vk = L.VENTS[1];
+const vc = L.pathCells().find((c) => c.k === vk);
+stand(p, vc.x + 0.5, L.stepSurface(vk), vc.z + 0.5);
+p.log.length = 0;
+ticks(110);
+expect(p.log.some((e) => e[0] === "fire") && p.log.some((e) => e[0] === "damage" && e[2] === "fire"), "vents of soul fire burn whoever stands on them");
+// A soul grabs you and drags you toward the void.
+const s0 = mc.entities.find((e) => e.typeId === "agartha:soul" && e.isValid);
+p.log.length = 0;
+for (let i = 0; i < 40 && !p.log.some((e) => e[0] === "knockback"); i++) { p.location = { ...s0.location }; ticks(4); }
+expect(p.log.some((e) => e[0] === "knockback"), "the souls seize you and try to throw you off the stair");
+// Creatures of our own come in the waves (they work on any difficulty).
+const kinds = new Set(mc.entities.filter((e) => e.isValid && e.hasTag("agartha_hell_mob")).map((e) => e.typeId));
+expect(kinds.has("agartha:damned") || kinds.has("agartha:hellhound"), `the waves are the Damned and hellhounds (${[...kinds].join(", ")})`);
+
 // --- Death, and the loop ----------------------------------------------------
 p.location = abs(5, -30, 5);
 fire("entityDie", { deadEntity: p, damageSource: { cause: "lava" } });
@@ -142,7 +166,47 @@ stand(p, 5.5, -30, 5.5);
 ticks(12);
 expect(true, "(scars are remembered where you died)");
 
-// --- Layer 2 ---------------------------------------------------------------
+// --- Layer II: the City of Dis ------------------------------------------------
+const D = L.DIS;
+stand(p, L.ASCENT_PROFILE[40].x + 0.5, Math.ceil(L.ASCENT_PROFILE[40].y), L.ASCENT_PROFILE[40].z + 0.5);
+ticks(10);
+stand(p, D.x - 40, D.floorY, D.z + 0.5);
+ticks(10);
+expect(p.log.some((e) => e[0] === "cmd" && e[1].includes("agartha:dis_fog")) && titles(p).some((x) => x.includes("City of Dis")), "the Road of Ashes leads into the City of Dis");
+ticks(20 * 12);
+const disMobs = () => mc.entities.filter((e) => e.isValid && e.hasTag("agartha_dis"));
+expect(disMobs().length > 0, `the city's hunters come for you (${disMobs().map((e) => e.typeId.replace("agartha:", "")).join(", ")})`);
+expect(disMobs().some((e) => e.typeId === "agartha:fury"), "Furies circle over the city");
+// A Fury dives.
+const fury = disMobs().find((e) => e.typeId === "agartha:fury");
+p.log.length = 0;
+for (let i = 0; i < 120 && !p.log.some((e) => e[0] === "damage" && e[2] === "entityAttack"); i++) ticks(2);
+expect(p.log.some((e) => e[0] === "damage" && e[2] === "entityAttack"), "a Fury dives and strikes");
+// The Gate of Dis is shut until the three Seals are broken.
+const gate = L.innerGateCells();
+const gateShut = () => gate.filter((g) => g.kind === "bars").every((g) => (placed.get(`${OX + g.x},${g.y},${OZ + g.z}`) ?? "shut") !== "minecraft:air");
+expect(gateShut(), "the Gate of Dis is shut");
+const { sealBits } = await import("./mock/scripts/hell_dis.js");
+L.SEALS.forEach((s, i) => {
+  const before = mc.entities.length;
+  stand(p, s.x + 1.5, s.y, s.z + 0.5);
+  ticks(20 * 7);
+  expect((sealBits() & (1 << i)) !== 0, `${s.name} breaks after holding your ground`);
+  expect(mc.entities.length > before, `...and its guardians come (${mc.entities.slice(before).map((e) => e.typeId.replace("agartha:", "")).join(", ")})`);
+});
+expect(!gateShut(), "with all three Seals broken, the Gate of Dis opens");
+expect(mc.entities.some((e) => e.events.includes("agartha:as_garm")), "Garm, the great hound, guarded the Seal of Teeth");
+// The Bridge of Sighs falls behind you.
+const sighs = L.BRIDGES.find((b) => b.crumbling);
+const bc = L.bridgeCells(sighs);
+stand(p, bc[0].x + 0.5, D.floorY, sighs.z + 0.5);
+ticks(80);
+expect(bc.filter((c) => !c.edge).every((c) => placed.get(`${OX + c.x},${D.floorY - 1},${OZ + c.z}`) === "minecraft:air"), "the Bridge of Sighs crumbles into the river of fire");
+stand(p, D.x - 40, D.floorY, D.z + 0.5);
+ticks(20 * 30);
+expect(bc.filter((c) => !c.edge).every((c) => placed.get(`${OX + c.x},${D.floorY - 1},${OZ + c.z}`) !== "minecraft:air"), "and it rises again later");
+
+// --- Layer III -----------------------------------------------------------------
 // Walk into the Hall of Thrones.
 stand(p, 0.5, L.SPIRE.hallY + 1, L.SPIRE.minZ + 4);
 ticks(20);

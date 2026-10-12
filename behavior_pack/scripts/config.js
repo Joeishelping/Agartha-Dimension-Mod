@@ -1,3 +1,4 @@
+import { HELL_SHELL } from "./hell_layout.js";
 // Central configuration for the Agartha sky-realm.
 //
 // Bedrock add-ons cannot register brand-new dimensions, so Agartha lives in a
@@ -100,16 +101,16 @@ export const HELL = {
   minY: -63,
   maxY: 34,
   // The solid shell everything is carved from (relative x/z, inclusive).
-  shell: { minX: -64, maxX: 64, minZ: -24, maxZ: 148 },
-  buildVersion: 1,
+  shell: HELL_SHELL,
+  buildVersion: 3,
 };
 
-// 3x3 tiles of 64x64 on the same chunk-aligned grid as Agartha.
-const HELL_TILES_I = [-1, 0, 1];
-const HELL_TILES_J = [0, 1, 2];
+// 5x4 tiles of 64x64 on the same chunk-aligned grid as Agartha.
+const HELL_TILES_I = [0, 1, 2, 3, 4];
+const HELL_TILES_J = [-1, 0, 1, 2];
 export const HELL_REGION = {
-  minX: -96 + SHIFT_X, maxX: 95 + SHIFT_X,
-  minZ: -32 + SHIFT_Z, maxZ: 159 + SHIFT_Z,
+  minX: -32 + SHIFT_X, maxX: 4 * 64 + 31 + SHIFT_X,
+  minZ: -96 + SHIFT_Z, maxZ: 159 + SHIFT_Z,
   minY: HELL.minY, maxY: HELL.maxY,
 };
 
@@ -123,7 +124,7 @@ export function listHellTiles() {
   const tiles = [];
   for (const j of HELL_TILES_J) {
     for (const i of j % 2 ? [...HELL_TILES_I].reverse() : HELL_TILES_I) {
-      tiles.push({ i, j, minX: i * s - s / 2 + SHIFT_X, maxX: i * s + s / 2 - 1 + SHIFT_X, minZ: j * s - s / 2 + SHIFT_Z, maxZ: j * s + s / 2 - 1 + SHIFT_Z });
+      tiles.push({ i, j: j + 1, minX: i * s - s / 2 + SHIFT_X, maxX: i * s + s / 2 - 1 + SHIFT_X, minZ: j * s - s / 2 + SHIFT_Z, maxZ: j * s + s / 2 - 1 + SHIFT_Z }); // j + 1: ticking-area names stay positive
     }
   }
   return tiles;

@@ -9,7 +9,12 @@
 //    noise wakes the damned. Spikes, crumbling steps, waves, climbing souls.
 //  * Dying anywhere in Hell sends you back to the very bottom. Hell remembers:
 //    how many times you climbed, where you died, what you learned.
-//  * Layer 2, the Spire of Absolute Contract: no combat. The Devil waits in
+//    Arrow slits shoot from the walls, vents of soul fire erupt, the souls
+//    grab at you and try to drag you off the stair, Furies dive in the
+//    upper Hours.
+//  * Layer 2, the City of Dis (see hell_dis.js): three Seals to break before
+//    its inner Gate opens; the Damned, hellhounds and Garm, Furies, dread.
+//  * Layer 3, the Spire of Absolute Contract: no combat. The Devil waits in
 //    the Hall of Thrones; the only way out is a Deal (see devil.js).
 //
 // Operator commands (/scriptevent):
@@ -26,15 +31,16 @@ import { SITES, ensureBuilt, eraseSite, isBuilt, isBuilding, markUnbuilt, isBuil
 import { readJson, liftForger, restoreForger } from "./forger.js";
 import { buildHellmouth } from "./hellmouth.js";
 import {
-  PIT, HOURS, ARRIVAL, TRAPS, GLYPHS, TRUE_NAME, CLOCK, SCALE, SPIRE, DEVIL_SPOT,
+  PIT, HOURS, ARRIVAL, TRAPS, GLYPHS, TRUE_NAME, CLOCK, SCALE, SPIRE, DEVIL_SPOT, SLITS, VENTS,
   stepAngle, stepSurface, stepBlock, stepPerm, stepUnder, laneOf, stepKind, trapIndex, hourButton, pathCells, hellZone,
 } from "./hell_layout.js";
+import { spawnCreature, spawnFury, furyTick, watcherTick, clearCreatures, creatures, isOurs, DAMNED, HOUND, FURY } from "./hell_creatures.js";
+import { disTick, resetDis, sealBits } from "./hell_dis.js";
 import { clockFace } from "./hell_blueprint.js";
 import { hellAmbience, forgetHellAmbience } from "./hell_ambience.js";
 import { openDevil } from "./devil.js";
 
 export const HELL_TAG = "agartha_in_hell";
-const MOB_TAG = "agartha_hell_mob";
 const SOUL_TAG = "agartha_soul";
 const HELLMOUTH_KEY = "agartha:hellmouth";
 const P = {
@@ -104,17 +110,31 @@ function arrivalLoc() {
 }
 
 const zoneOfPlayer = new Map();
+const FOGS = { pit: "agartha:hell_fog", dis: "agartha:dis_fog", spire: "agartha:abyss_fog" };
+const LAYER_TITLES = {
+  dis: ["§4The City of Dis", "§7Three Seals bind its inner Gate"],
+  spire: ["§8The Spire of Absolute Contract", "§7the Keeper waits"],
+};
+const zonesSeen = new Map(); // playerId -> zones reached this ascent
 function applyAtmosphere(player, zone) {
   if (zoneOfPlayer.get(player.id) === zone) return;
   zoneOfPlayer.set(player.id, zone);
   run(player, `fog @s remove ${FOG_USER}`);
-  run(player, `fog @s push ${zone === "pit" ? "agartha:hell_fog" : "agartha:abyss_fog"} ${FOG_USER}`);
+  run(player, `fog @s push ${FOGS[zone] ?? FOGS.spire} ${FOG_USER}`);
+  const seen = zonesSeen.get(player.id) ?? new Set();
+  zonesSeen.set(player.id, seen);
+  if (LAYER_TITLES[zone] && !seen.has(zone)) {
+    seen.add(zone);
+    const [t, sub] = LAYER_TITLES[zone];
+    player.onScreenDisplay.setTitle(t, { subtitle: sub, fadeInDuration: 20, stayDuration: 70, fadeOutDuration: 30 });
+    player.playSound("agartha.dread", { volume: 0.8 });
+  }
 }
 
 function clearAtmosphere(player) {
   zoneOfPlayer.delete(player.id);
   run(player, `fog @s remove ${FOG_USER}`);
-  for (const s of ["hell_drone", "abyss_bed", "hell_wail", "hell_whisper"]) run(player, `stopsound @s agartha.${s}`);
+  for (const s of ["hell_drone", "abyss_bed", "dis_bed", "hell_wail", "hell_whisper"]) run(player, `stopsound @s agartha.${s}`);
   forgetHellAmbience(player.id);
 }
 
@@ -126,6 +146,7 @@ function toBottom(player, again, line) {
   returning.set(player.id, system.currentTick);
   player.teleport(arrivalLoc(), { dimension: dim(), facingLocation: abs(ARRIVAL.face.x + 0.5, ARRIVAL.face.y + 1, ARRIVAL.face.z + 0.5) });
   runHours.set(player.id, 0);
+  zonesSeen.delete(player.id);
   player.removeEffect("levitation");
   if (again) {
     const loops = num(player, P.loops) + 1;
@@ -428,7 +449,7 @@ world.afterEvents.playerPlaceBlock.subscribe(({ player, block }) => {
 // ---------------------------------------------------------------------------
 
 const LAVA_START_DELAY = 20 * 12;
-const LAVA_RISE_TICKS = 34;
+const LAVA_RISE_TICKS = 36;
 const LAVA_MAX_Y = PIT.floorY + 74;
 // `stale`: lava may have been left standing when the world was last closed
 // (it is not remembered across restarts), so the pit is flushed top to
@@ -452,7 +473,7 @@ function discRows(radius) {
   return rows;
 }
 const LAVA_ROWS = discRows(PIT.airR);
-const DRAIN_ROWS = discRows(15.5);
+const DRAIN_ROWS = discRows(PIT.airR + 5);
 
 function riseLava() {
   lava.level = lava.level === null ? PIT.floorY : lava.level + 1;
@@ -691,23 +712,19 @@ function stepTick(tick, player) {
 // Waves of the damned
 // ---------------------------------------------------------------------------
 
-const WAVE_TICKS = 20 * 45;
-const MOB_CAP = 12;
+const WAVE_TICKS = 20 * 30;
+const MOB_CAP = 14;
 let nextWave = 0;
-const ourMobs = new Set();
 
 function hellMobs() {
-  try {
-    return dim().getEntities({ tags: [MOB_TAG] });
-  } catch {
-    return [];
-  }
+  return creatures("pit");
 }
 
+/** What comes for you, by how high you have climbed. */
 function waveTypes(hour) {
-  if (hour < 4) return ["minecraft:zombie", "minecraft:husk", "minecraft:skeleton"];
-  if (hour < 8) return ["minecraft:wither_skeleton", "minecraft:skeleton", "minecraft:husk", "minecraft:vex"];
-  return ["minecraft:wither_skeleton", "minecraft:blaze", "minecraft:vex", "minecraft:wither_skeleton"];
+  if (hour < 4) return [[DAMNED], [DAMNED], [HOUND]];
+  if (hour < 8) return [[DAMNED], [HOUND], [DAMNED, "agartha:as_champion"], [HOUND]];
+  return [[DAMNED, "agartha:as_champion"], [HOUND], [HOUND], [DAMNED], [FURY]];
 }
 
 function spawnWave(extra = 0) {
@@ -719,46 +736,36 @@ function spawnWave(extra = 0) {
   for (const p of pit) {
     const r = rel(p.location);
     // Where on the spiral is this soul? (Off the path, e.g. at a button: judge by height.)
-    const k = stepUnder(r.x, r.y, r.z) ?? Math.max(0, Math.min(PIT.steps, Math.round((r.y - PIT.floorY) * 2)));
+    const k = stepUnder(r.x, r.y, r.z) ?? Math.max(0, Math.min(PIT.steps, Math.round((r.y - PIT.floorY) * 4)));
     const floor = (lava.level ?? PIT.floorY - 1) + 3; // never spawn into the lava
     const hour = runHours.get(p.id) ?? 0;
     const loops = num(p, P.loops);
     const n = Math.min(room, 2 + Math.floor(hour / 3) + Math.min(3, Math.floor(loops / 4)) + extra);
     const types = waveTypes(hour);
     for (let i = 0; i < n; i++) {
-      let sk = Math.max(3, Math.min(PIT.steps - 4, k + (i % 3 === 2 ? -6 : 8 + i * 3)));
-      if (stepSurface(sk) < floor) sk = Math.min(PIT.steps - 4, k + 6 + i * 2);
-      const a = stepAngle(sk);
-      const loc = abs(9 * Math.cos(a) + 0.5, stepSurface(sk) + 0.2, 9 * Math.sin(a) + 0.5);
-      try {
-        const m = dim().spawnEntity(types[i % types.length], loc);
-        ourMobs.add(m.id);
-        m.addTag(MOB_TAG);
-        dim().spawnParticle("agartha:soul_wisp", loc);
-      } catch {
-        // spot unloaded
+      const [type, variant] = types[i % types.length];
+      if (type === FURY) {
+        spawnFury({ x: p.location.x, y: p.location.y + 12, z: p.location.z }, "pit");
+      } else {
+        let sk = Math.max(3, Math.min(PIT.steps - 4, k + (i % 3 === 2 ? -10 : 14 + i * 5)));
+        if (stepSurface(sk) < floor) sk = Math.min(PIT.steps - 4, k + 10 + i * 4);
+        const a = stepAngle(sk);
+        spawnCreature(type, abs(PIT.rc * Math.cos(a) + 0.5, stepSurface(sk) + 0.2, PIT.rc * Math.sin(a) + 0.5), "pit", variant);
       }
       room--;
     }
-    p.playSound("mob.wither.ambient", { volume: 0.5, pitch: 0.6 });
+    p.playSound("agartha.hound_howl", { volume: 0.6, pitch: 0.8 });
   }
 }
 
 function clearMobs() {
-  for (const m of hellMobs()) {
-    try {
-      m.remove();
-    } catch {
-      // gone
-    }
-  }
-  ourMobs.clear();
+  clearCreatures("pit");
 }
 
 // Only the damned we send come to Hell. Nothing else spawns there.
 world.afterEvents.entitySpawn.subscribe(({ entity }) => {
   try {
-    if (!entity?.isValid || entity.typeId === "minecraft:player" || ourMobs.has(entity.id)) return;
+    if (!entity?.isValid || entity.typeId === "minecraft:player" || isOurs(entity.id)) return;
     if (entity.typeId === IDS.devil || entity.typeId === IDS.soul || entity.typeId === "minecraft:item" || entity.typeId === "minecraft:xp_orb") return;
     if (!inHellVolume(entity)) return;
     if (entity.matches({ families: ["monster"] }) || entity.matches({ families: ["mob"] })) entity.remove();
@@ -771,7 +778,7 @@ world.afterEvents.entitySpawn.subscribe(({ entity }) => {
 // The climbing souls
 // ---------------------------------------------------------------------------
 
-const SOUL_COUNT = 8;
+const SOUL_COUNT = 16;
 const souls = new Map(); // entity id -> { k, speed, lane, giveUp, fall }
 
 function soulPos(s) {
@@ -780,7 +787,7 @@ function soulPos(s) {
 }
 
 function newSoul(i) {
-  return { k: 2 + ((i * 19) % 120), speed: 0.05 + Math.random() * 0.06, lane: 8 + (i % 2) * 0.8, giveUp: 40 + Math.random() * 118, fall: null };
+  return { k: 2 + ((i * 37) % 280), speed: 0.06 + Math.random() * 0.07, lane: PIT.laneMin + 0.6 + (i % 3) * 0.9, giveUp: 40 + Math.random() * (PIT.steps - 42), fall: null };
 }
 
 function soulTick(tick, pitPlayers) {
@@ -816,7 +823,7 @@ function soulTick(tick, pitPlayers) {
       s.fall.r = Math.max(2.5, s.fall.r - 0.25);
       const a = s.fall.a;
       if (s.fall.y <= PIT.floorY) {
-        Object.assign(s, newSoul(Math.floor(Math.random() * 8)), { k: 1 });
+        Object.assign(s, newSoul(Math.floor(Math.random() * SOUL_COUNT)), { k: 1 });
         continue;
       }
       try {
@@ -842,6 +849,129 @@ function soulTick(tick, pitPlayers) {
     } catch {
       // gone
     }
+  }
+}
+
+// The souls are not your friends: one that reaches you grabs hold and tries
+// to drag you off the stair into the void, then lets go and falls.
+const grasped = new Map();
+function graspTick(tick, pitPlayers) {
+  let ents;
+  try {
+    ents = dim().getEntities({ type: IDS.soul });
+  } catch {
+    return;
+  }
+  for (const p of pitPlayers) {
+    if (tick - (grasped.get(p.id) ?? -Infinity) < 20 * 7) continue;
+    const e = ents.find((s) => {
+      const st = souls.get(s.id);
+      return st && !st.fall && Math.hypot(s.location.x - p.location.x, s.location.z - p.location.z) < 2.2 && Math.abs(s.location.y - p.location.y) < 2;
+    });
+    if (!e || Math.random() < 0.4) continue;
+    grasped.set(p.id, tick);
+    const r = rel(p.location);
+    const len = Math.hypot(r.x, r.z) || 1;
+    const dir = { x: -r.x / len, z: -r.z / len }; // toward the void in the middle
+    try {
+      p.applyKnockback({ x: dir.x * 0.85, z: dir.z * 0.85 }, 0.32);
+    } catch {
+      try {
+        p.applyKnockback(dir.x, dir.z, 0.85, 0.32);
+      } catch {
+        // no knockback on this version
+      }
+    }
+    p.addEffect("slowness", 30, { amplifier: 2, showParticles: false });
+    p.onScreenDisplay.setActionBar("§8§oA soul seizes you!");
+    try {
+      dim().playSound("agartha.hell_wail", e.location, { volume: 1.2, pitch: 1.2 });
+    } catch {
+      // cosmetic
+    }
+    const st = souls.get(e.id);
+    if (st) st.fall = { y: e.location.y, r: Math.hypot(e.location.x - ox, e.location.z - oz), a: Math.atan2(e.location.z - oz, e.location.x - ox) };
+  }
+}
+
+// Arrow slits in the wall shoot at whoever climbs past.
+const slitFired = SLITS.map(() => -Infinity);
+function arrowTick(tick, pitPlayers) {
+  if (tick % 26 !== 0) return;
+  for (const p of pitPlayers) {
+    if (Math.random() < 0.35) continue;
+    const r = rel(p.location);
+    let best = -1;
+    let bestD = 18;
+    SLITS.forEach((s, i) => {
+      if (tick - slitFired[i] < 60) return;
+      const d = Math.hypot(s.x - r.x, s.z - r.z);
+      if (d < bestD && d > 4 && Math.abs(s.y - r.y) < 9) {
+        best = i;
+        bestD = d;
+      }
+    });
+    if (best < 0) continue;
+    slitFired[best] = tick;
+    const s = SLITS[best];
+    const from = abs(s.x + 0.5 - Math.cos(s.a) * 1.1, s.y + 1, s.z + 0.5 - Math.sin(s.a) * 1.1);
+    const to = { x: p.location.x, y: p.location.y + 1.3, z: p.location.z };
+    const d = Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z) || 1;
+    try {
+      const arrow = dim().spawnEntity("minecraft:arrow", from);
+      arrow.applyImpulse({ x: ((to.x - from.x) / d) * 1.9, y: ((to.y - from.y) / d) * 1.9 + 0.08, z: ((to.z - from.z) / d) * 1.9 });
+      dim().playSound("random.bow", from, { volume: 1, pitch: 0.6 });
+    } catch {
+      // unloaded
+    }
+  }
+}
+
+// Vents of soul fire breathe in a rhythm: a hiss, then a column of flame.
+const VENT_PERIOD = 100;
+function ventTick(tick, pitPlayers) {
+  VENTS.forEach((v, i) => {
+    const phase = (tick + i * 37) % VENT_PERIOD;
+    const near = pitPlayers.some((p) => Math.abs(rel(p.location).y - stepSurface(v)) < 24);
+    if (!near) return;
+    const c = pathCellsOf(v);
+    if (phase < 2) for (const cell of c.slice(0, 2)) sound("random.fizz", abs(cell.x + 0.5, stepSurface(v), cell.z + 0.5), { volume: 1, pitch: 0.5 });
+    if (phase < 16 && phase % 4 < 2) for (const cell of c) fxAt("agartha:hell_ash", abs(cell.x + 0.5, stepSurface(v) + 0.3, cell.z + 0.5));
+    if (phase >= 16 && phase < 44) {
+      if (phase % 4 < 2) for (const cell of c) fxAt("agartha:fire_jet", abs(cell.x + 0.5, stepSurface(v), cell.z + 0.5));
+      if (phase - 16 < 2) sound("mob.blaze.shoot", abs(c[0].x + 0.5, stepSurface(v), c[0].z + 0.5), { volume: 1.2, pitch: 0.6 });
+      for (const p of pitPlayers) {
+        const r = rel(p.location);
+        const k = stepUnder(r.x, r.y, r.z);
+        if (k === v || k === v + 1) {
+          try {
+            p.setOnFire(5, true);
+            if ((phase - 16) % 10 < 2) p.applyDamage(3, { cause: "fire" });
+          } catch {
+            // gone
+          }
+        }
+      }
+    }
+  });
+}
+const VENT_CELLS = new Map();
+function pathCellsOf(k) {
+  if (!VENT_CELLS.has(k)) VENT_CELLS.set(k, pathCells().filter((c) => c.k === k || c.k === k + 1));
+  return VENT_CELLS.get(k);
+}
+function fxAt(id, loc) {
+  try {
+    dim().spawnParticle(id, loc);
+  } catch {
+    // cosmetic
+  }
+}
+function sound(id, loc, opts) {
+  try {
+    dim().playSound(id, loc, opts);
+  } catch {
+    // cosmetic
   }
 }
 
@@ -924,7 +1054,7 @@ function weighTick(players) {
     if (p.getDynamicProperty(P.weighed)) continue;
     const r = rel(p.location);
     if (Math.hypot(r.x - SCALE.x - 0.5, r.z - SCALE.z - 0.5) > 3.5 || Math.abs(r.y - SPIRE.hallY - 1) > 2) continue;
-    const light = num(p, P.runDeaths) <= 1;
+    const light = num(p, P.runDeaths) <= 2;
     p.setDynamicProperty(P.weighed, light ? "light" : "heavy");
     p.onScreenDisplay.setTitle("§6Your heart is weighed", {
       subtitle: light ? "§7against the Feather. It does not sink." : "§4against the Feather. It sinks. Ammit stirs.",
@@ -954,7 +1084,7 @@ function devil() {
   const at = abs(DEVIL_SPOT.x, DEVIL_SPOT.y, DEVIL_SPOT.z);
   let found;
   try {
-    found = dim().getEntities({ type: IDS.devil, location: at, maxDistance: 40 });
+    found = dim().getEntities({ type: IDS.devil });
   } catch {
     return undefined;
   }
@@ -1016,9 +1146,14 @@ export function setHellDebug(on) {
   hellDebug = on;
 }
 
+let emptySince = null;
+let disEmptySince = null;
+let nextPitFury = 0;
+
 function hellTick() {
   const tick = system.currentTick - (system.currentTick % 2);
   const pit = [];
+  const dis = [];
   const spire = [];
   for (const p of world.getAllPlayers()) {
     if (!p?.isValid) continue;
@@ -1036,7 +1171,7 @@ function hellTick() {
     }
     const zone = zoneOf(p) ?? "spire";
     applyAtmosphere(p, zone);
-    (zone === "pit" ? pit : spire).push(p);
+    (zone === "pit" ? pit : zone === "dis" ? dis : spire).push(p);
     if (zone === "pit") stepTick(tick, p);
     hellAmbience(p, tick, zone, lava.level);
   }
@@ -1048,24 +1183,51 @@ function hellTick() {
   if (pit.length) {
     if (tick % 100 === 0) mendGates();
     soulTick(tick, pit);
+    graspTick(tick, pit);
+    arrowTick(tick, pit);
+    ventTick(tick, pit);
     if (tick % 20 === 0) whisperTick(tick, pit);
     if (lava.level !== null && tick >= nextWave) {
       if (nextWave) spawnWave();
       nextWave = tick + WAVE_TICKS;
     }
+    // In the upper Hours, Furies come down out of the dark.
+    if (tick >= nextPitFury) {
+      nextPitFury = tick + 20 * 25;
+      const high = pit.filter((p) => (runHours.get(p.id) ?? 0) >= 8);
+      if (high.length && hellMobs().filter((e) => e.typeId === FURY).length < 2) {
+        const p = high[Math.floor(Math.random() * high.length)];
+        spawnFury({ x: ox + PIT.x, y: p.location.y + 14, z: oz + PIT.z }, "pit");
+      }
+    }
   } else if (tick % 40 === 0) {
     if (souls.size) soulTick(tick, pit);
-    if (mobs.length || ourMobs.size) clearMobs();
+    if (mobs.length || hellMobs().length) clearMobs();
     nextWave = 0;
   }
-  if (tick % 10 === 0 && (pit.length || spire.length)) memoryTick(tick, [...pit, ...spire]);
+  if (pit.length || dis.length) furyTick(tick, [...pit, ...dis]);
+  watcherTick(tick);
+  if (dis.length) {
+    disEmptySince = null;
+    disTick(tick, dis);
+  } else if (tick % 40 === 0) {
+    disEmptySince ??= tick;
+    if (tick - disEmptySince > 20 * 20 && creatures("dis").length) clearCreatures("dis");
+  }
+  if (tick % 10 === 0 && (pit.length || dis.length || spire.length)) memoryTick(tick, [...pit, ...dis, ...spire]);
   if (spire.length) {
     weighTick(spire);
     if (tick % 40 === 0) clockTick();
     if (tick % 10 === 0) devilTick(spire);
   }
+  // When Hell is empty for a while, the Seals of Dis mend and its Gate shuts.
+  if (pit.length || dis.length || spire.length || world.getAllPlayers().some((p) => p.hasTag(HELL_TAG))) emptySince = null;
+  else if (tick % 40 === 0) {
+    emptySince ??= tick;
+    if (tick - emptySince > 20 * 30 && sealBits()) resetDis();
+  }
   if (hellDebug && tick % 400 === 0) {
-    console.warn(`[Agartha debug] hell tick ${tick}: pit ${pit.length}, spire ${spire.length}, lava ${lava.level ?? "none"}, mobs ${mobs.length}, souls ${souls.size}, traps ${traps.map((t) => t.state[0]).join("")}`);
+    console.warn(`[Agartha debug] hell tick ${tick}: pit ${pit.length}, dis ${dis.length}, spire ${spire.length}, lava ${lava.level ?? "none"}, pit mobs ${mobs.length}, dis mobs ${creatures("dis").length}, souls ${souls.size}, seals ${sealBits()}, traps ${traps.map((t) => t.state[0]).join("")}`);
   }
 }
 

@@ -169,6 +169,115 @@ def devil_voice(sec):
     return normalize(reverb(lowpass(out, 0.25), 1.4, 0.35), 0.8)
 
 
+def damned_moan(sec):
+    """A dry, rattling groan."""
+    f0 = rng.uniform(90, 130)
+    v = glide_voice(f0, f0 * rng.uniform(0.7, 0.85), sec, vib=0.05, vib_rate=rng.uniform(3, 5), weights=[(1, 1), (2, 0.8), (3, 0.6), (4, 0.5), (6, 0.3), (8, 0.2)])
+    t = t_axis(sec)
+    env = np.clip(t / 0.3, 0, 1) * np.clip((sec - t) / 0.8, 0, 1)
+    rasp = band_noise(len(t), 400, 2500) * 0.35 * (0.5 + 0.5 * np.sin(2 * np.pi * 23 * t))
+    out = np.tanh((v * 0.7 + rasp) * env * 2.0)
+    return normalize(reverb(lowpass(out, 0.3), 1.2, 0.3), 0.75)
+
+
+def damned_hurt():
+    t = t_axis(0.6)
+    f = 240 * (1 - 0.4 * t / 0.6)
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    out = sum(a * np.sin(h * ph) for h, a in [(1, 1), (2, 0.7), (3, 0.5), (5, 0.3)]) * np.exp(-t / 0.25)
+    out += band_noise(len(t), 800, 4000) * np.exp(-t / 0.1) * 0.4
+    return normalize(np.tanh(out * 2), 0.8)
+
+
+def damned_death():
+    t = t_axis(2.2)
+    f = 180 * (1 - 0.6 * t / 2.2)
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    out = sum(a * np.sin(h * ph) for h, a in [(1, 1), (2, 0.6), (3, 0.4)]) * np.exp(-t / 0.8)
+    out += band_noise(len(t), 200, 1500) * np.exp(-t / 0.5) * 0.4
+    return normalize(reverb(np.tanh(out * 1.6), 1.5, 0.4), 0.8)
+
+
+def hound_growl(sec):
+    t = t_axis(sec)
+    f0 = rng.uniform(55, 75)
+    ph = 2 * np.pi * np.cumsum(f0 * (1 + 0.05 * np.sin(2 * np.pi * 1.3 * t))) / SR
+    tone = sum(a * np.sin(h * ph) for h, a in [(1, 1), (2, 0.9), (3, 0.7), (4, 0.5), (5, 0.35), (7, 0.2)])
+    am = 0.5 + 0.5 * np.abs(np.sin(2 * np.pi * rng.uniform(18, 26) * t))
+    env = np.clip(t / 0.2, 0, 1) * np.clip((sec - t) / 0.4, 0, 1)
+    out = np.tanh((tone * am + band_noise(len(t), 300, 1800) * 0.5) * env * 1.8)
+    return normalize(lowpass(out, 0.25), 0.8)
+
+
+def hound_howl(sec):
+    t = t_axis(sec)
+    rise = np.clip(t / 0.8, 0, 1)
+    f = 260 + 220 * rise - 120 * np.clip((t - sec * 0.6) / (sec * 0.4), 0, 1)
+    f = f * (1 + 0.015 * np.sin(2 * np.pi * 5 * t))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    out = sum(a * np.sin(h * ph) for h, a in [(1, 1), (2, 0.4), (3, 0.2)])
+    env = np.clip(t / 0.4, 0, 1) * np.clip((sec - t) / 1.0, 0, 1)
+    return normalize(reverb(out * env, 3.0, 0.6), 0.7)
+
+
+def hound_hurt():
+    t = t_axis(0.4)
+    f = 700 * (1 - 0.5 * t / 0.4)
+    out = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.12) + band_noise(len(t), 1000, 5000) * np.exp(-t / 0.05) * 0.3
+    return normalize(out, 0.8)
+
+
+def fury_shriek(sec):
+    """A harpy's scream: a high, tearing glissando with a screech of noise."""
+    t = t_axis(sec)
+    f1 = rng.uniform(900, 1300)
+    f = f1 * (1 + 0.35 * np.sin(np.pi * t / sec)) * (1 + 0.03 * np.sin(2 * np.pi * 9 * t))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    tone = sum(a * np.sin(h * ph) for h, a in [(1, 1), (2, 0.7), (3, 0.5), (4, 0.3), (5, 0.2)])
+    screech = band_noise(len(t), 2500, 8000) * 0.5
+    env = np.clip(t / 0.08, 0, 1) * np.clip((sec - t) / 0.5, 0, 1)
+    out = np.tanh((tone + screech) * env * 2.5)
+    return normalize(reverb(out, 2.0, 0.5), 0.75)
+
+
+def dread(sec=4.0):
+    """A deep swell of dread: a sub boom, a dissonant cluster, whispers."""
+    n = int(SR * sec)
+    t = np.arange(n) / SR
+    env = np.clip(t / 1.2, 0, 1) ** 2 * np.clip((sec - t) / 1.5, 0, 1)
+    cluster = sum(np.sin(2 * np.pi * f * t) for f in [49, 52, 69.3, 73.4, 98, 103.8]) * 0.2
+    out = cluster * env + smooth_noise(n, 40) * env * 0.6
+    out[: int(1.2 * SR)] += band_noise(int(1.2 * SR), 2000, 8000) * np.linspace(0, 0.3, int(1.2 * SR))
+    return normalize(reverb(out, 3.0, 0.5), 0.85)
+
+
+def dis_bed(sec=60):
+    """The burning city: fire's roar, a far crowd of the damned, iron groaning, deep drums."""
+    n = int(SR * (sec + 2))
+    t = np.arange(n) / SR
+    roar = band_noise(n, 100, 700) * (0.5 + 0.5 * np.clip(smooth_noise(n, 0.4) * 0.5 + 0.5, 0, 1)) * 0.35
+    crackle = (rng.random(n) < 0.0015) * rng.uniform(-1, 1, n)
+    crackle = np.convolve(crackle, np.exp(-np.arange(200) / 30), mode="same") * 0.5
+    out = roar + crackle + smooth_noise(n, 35) * 0.4
+    # The crowd: many falling voices, far away.
+    for _ in range(26):
+        st = rng.uniform(0, sec - 4)
+        d = rng.uniform(2.5, 4.5)
+        f1 = rng.uniform(220, 480)
+        v = glide_voice(f1, f1 * rng.uniform(0.55, 0.8), d, vib=0.04)
+        e = np.sin(np.pi * np.arange(len(v)) / len(v)) ** 2
+        i0 = int(st * SR)
+        out[i0:i0 + len(v)] += v * e * 0.03
+    # Slow drums, like a heart under the city.
+    for k in range(int(sec / 2.4)):
+        i0 = int((k * 2.4 + 0.3) * SR)
+        tt = np.arange(int(0.6 * SR)) / SR
+        hit = np.sin(2 * np.pi * (60 - 20 * tt) * tt) * np.exp(-tt / 0.18) * (0.6 if k % 2 else 0.4)
+        out[i0:i0 + len(hit)] += hit[: max(0, min(len(hit), n - i0))]
+    out = reverb(out, 3.0, 0.45)
+    return normalize(fade(loopable(out, 2.0), 2.0, 2.0), 0.7)
+
+
 if __name__ == "__main__":
     write_ogg("hell_drone", hell_drone())
     write_ogg("abyss_bed", abyss_bed())
@@ -180,3 +289,18 @@ if __name__ == "__main__":
     write_ogg("hell_again", hell_again())
     for i, sec in enumerate([1.8, 2.3, 1.5]):
         write_ogg(f"devil_voice{i + 1}", devil_voice(sec))
+    for i, sec in enumerate([2.2, 2.8, 1.9]):
+        write_ogg(f"damned_moan{i + 1}", damned_moan(sec))
+    for i in range(2):
+        write_ogg(f"damned_hurt{i + 1}", damned_hurt())
+    write_ogg("damned_death", damned_death())
+    for i, sec in enumerate([1.6, 2.2]):
+        write_ogg(f"hound_growl{i + 1}", hound_growl(sec))
+    for i, sec in enumerate([3.5, 4.5]):
+        write_ogg(f"hound_howl{i + 1}", hound_howl(sec))
+    write_ogg("hound_hurt", hound_hurt())
+    write_ogg("hound_death", damned_hurt())
+    for i, sec in enumerate([1.4, 1.8, 1.2]):
+        write_ogg(f"fury_shriek{i + 1}", fury_shriek(sec))
+    write_ogg("dread", dread())
+    write_ogg("dis_bed", dis_bed())
