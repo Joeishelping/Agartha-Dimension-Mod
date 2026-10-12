@@ -672,7 +672,9 @@ function portalHum() {
 }
 
 function realmTick() {
-  const tick = system.currentTick;
+  // Runs every 2 ticks; round down so `tick % N === 0` checks still fire when
+  // the interval happened to start on an odd tick.
+  const tick = system.currentTick - (system.currentTick % 2);
   let anyoneHere = false;
   const inRealm = [];
   for (const player of world.getAllPlayers()) {
