@@ -18,13 +18,13 @@
       "sounds": [
         {
           "name": "sounds/agartha/wind1",
-          "volume": 0.5,
+          "volume": 0.175,
           "load_on_low_memory": true,
           "is3D": false
         },
         {
           "name": "sounds/agartha/wind2",
-          "volume": 0.5,
+          "volume": 0.175,
           "load_on_low_memory": true,
           "is3D": false
         }
@@ -35,22 +35,22 @@
       "sounds": [
         {
           "name": "sounds/agartha/chime1",
-          "volume": 0.6,
+          "volume": 0.21,
           "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/chime2",
-          "volume": 0.6,
+          "volume": 0.21,
           "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/chime3",
-          "volume": 0.6,
+          "volume": 0.21,
           "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/chime4",
-          "volume": 0.6,
+          "volume": 0.21,
           "load_on_low_memory": true
         }
       ],
@@ -62,7 +62,7 @@
       "sounds": [
         {
           "name": "sounds/agartha/welcome",
-          "volume": 1.0,
+          "volume": 0.6,
           "load_on_low_memory": true,
           "is3D": false
         }
@@ -73,7 +73,7 @@
       "sounds": [
         {
           "name": "sounds/agartha/portal",
-          "volume": 0.8,
+          "volume": 0.48,
           "load_on_low_memory": true
         }
       ],
@@ -85,7 +85,7 @@
       "sounds": [
         {
           "name": "sounds/agartha/bless",
-          "volume": 1.0,
+          "volume": 0.6,
           "load_on_low_memory": true
         }
       ],
@@ -97,7 +97,7 @@
       "sounds": [
         {
           "name": "sounds/agartha/wind_bed",
-          "volume": 0.7,
+          "volume": 0.245,
           "load_on_low_memory": true,
           "stream": true,
           "is3D": false
@@ -109,7 +109,7 @@
       "sounds": [
         {
           "name": "sounds/agartha/aurora_bed",
-          "volume": 0.8,
+          "volume": 0.28,
           "load_on_low_memory": true,
           "stream": true,
           "is3D": false
@@ -121,17 +121,17 @@
       "sounds": [
         {
           "name": "sounds/agartha/sparkle1",
-          "volume": 0.5,
+          "volume": 0.175,
           "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/sparkle2",
-          "volume": 0.5,
+          "volume": 0.175,
           "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/sparkle3",
-          "volume": 0.5,
+          "volume": 0.175,
           "load_on_low_memory": true
         }
       ],
@@ -143,19 +143,19 @@
       "sounds": [
         {
           "name": "sounds/agartha/swell1",
-          "volume": 0.8,
+          "volume": 0.28,
           "load_on_low_memory": true,
           "is3D": false
         },
         {
           "name": "sounds/agartha/swell2",
-          "volume": 0.8,
+          "volume": 0.28,
           "load_on_low_memory": true,
           "is3D": false
         },
         {
           "name": "sounds/agartha/swell3",
-          "volume": 0.8,
+          "volume": 0.28,
           "load_on_low_memory": true,
           "is3D": false
         }
@@ -166,7 +166,7 @@
       "sounds": [
         {
           "name": "sounds/agartha/horn",
-          "volume": 1.0,
+          "volume": 0.35,
           "load_on_low_memory": true,
           "is3D": false
         }
