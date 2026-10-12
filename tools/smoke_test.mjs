@@ -27,7 +27,7 @@ fire("system.scriptEventReceive", { id: "agartha:forge", message: "", sourceEnti
 expect(p.mode === "Spectator", "the forger is put in spectator mode");
 let t = 0; while (system.__busy() && t++ < 400000) system.__tick();
 expect(__messages.some((m) => m.includes("Agartha is forged")), `realm forged (${JSON.stringify(mc.stats())})`);
-expect(p.log.some((e) => e[0] === "tp" && e[1].y === 300), "the forger was flown over the site");
+expect(p.log.some((e) => e[0] === "tp" && e[1].y === REALM.baseY + 40), "the forger was flown over the site");
 expect(p.mode === "Survival" && p.location.x === 40, "the forger is returned home in their own game mode");
 expect(p.items.includes("agartha:gate_keystone"), "the forger receives the Keystone");
 expect(mc.cmds.every((c) => !c.includes("undefined")), "no malformed commands");
@@ -66,6 +66,8 @@ expect(inRealm(p), "still in Agartha after a minute and a half");
 const count = (arr, id) => arr.filter((x) => x === id).length;
 expect(count(mc.soundLog, "agartha.ambience") >= 2, `the choir keeps playing (${count(mc.soundLog, "agartha.ambience")}x in 90 s)`);
 expect(count(mc.soundLog, "agartha.chime") >= 6 && count(mc.soundLog, "agartha.wind") >= 3, `chimes and wind recur (${count(mc.soundLog, "agartha.chime")} chimes, ${count(mc.soundLog, "agartha.wind")} gusts)`);
+expect(count(mc.soundLog, "agartha.wind_bed") >= 3, `the wind bed never stops (${count(mc.soundLog, "agartha.wind_bed")}x 30 s clips in 90 s)`);
+expect(count(mc.soundLog, "agartha.sparkle") >= 15 && count(mc.soundLog, "agartha.swell") >= 2, `sparkles and choir swells layered on top (${count(mc.soundLog, "agartha.sparkle")} sparkles, ${count(mc.soundLog, "agartha.swell")} swells)`);
 expect(count(mc.fxLog, "agartha:snowfall") > 200 && count(mc.fxLog, "agartha:aurora") > 50, `effects never stop (${mc.fxLog.length} effects in 90 s)`);
 expect(new Set(mc.fxLog).size >= 6, `many kinds of effects (${[...new Set(mc.fxLog)].join(", ")})`);
 // Talking to the All-Father.

@@ -6,7 +6,7 @@
       "sounds": [
         {
           "name": "sounds/agartha/ambience",
-          "volume": 0.8,
+          "volume": 1.0,
           "load_on_low_memory": true,
           "stream": true,
           "is3D": false
@@ -18,13 +18,13 @@
       "sounds": [
         {
           "name": "sounds/agartha/wind1",
-          "volume": 0.55,
+          "volume": 0.75,
           "load_on_low_memory": true,
           "is3D": false
         },
         {
           "name": "sounds/agartha/wind2",
-          "volume": 0.55,
+          "volume": 0.75,
           "load_on_low_memory": true,
           "is3D": false
         }
@@ -35,22 +35,22 @@
       "sounds": [
         {
           "name": "sounds/agartha/chime1",
-          "volume": 0.75,
+          "volume": 0.9,
           "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/chime2",
-          "volume": 0.75,
+          "volume": 0.9,
           "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/chime3",
-          "volume": 0.75,
+          "volume": 0.9,
           "load_on_low_memory": true
         },
         {
           "name": "sounds/agartha/chime4",
-          "volume": 0.75,
+          "volume": 0.9,
           "load_on_low_memory": true
         }
       ],
@@ -91,6 +91,86 @@
       ],
       "min_distance": 8.0,
       "max_distance": 48.0
+    },
+    "agartha.wind_bed": {
+      "category": "ambient",
+      "sounds": [
+        {
+          "name": "sounds/agartha/wind_bed",
+          "volume": 0.7,
+          "load_on_low_memory": true,
+          "stream": true,
+          "is3D": false
+        }
+      ]
+    },
+    "agartha.aurora_bed": {
+      "category": "ambient",
+      "sounds": [
+        {
+          "name": "sounds/agartha/aurora_bed",
+          "volume": 0.8,
+          "load_on_low_memory": true,
+          "stream": true,
+          "is3D": false
+        }
+      ]
+    },
+    "agartha.sparkle": {
+      "category": "ambient",
+      "sounds": [
+        {
+          "name": "sounds/agartha/sparkle1",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/agartha/sparkle2",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/agartha/sparkle3",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        }
+      ],
+      "min_distance": 3.0,
+      "max_distance": 32.0
+    },
+    "agartha.swell": {
+      "category": "ambient",
+      "sounds": [
+        {
+          "name": "sounds/agartha/swell1",
+          "volume": 0.8,
+          "load_on_low_memory": true,
+          "is3D": false
+        },
+        {
+          "name": "sounds/agartha/swell2",
+          "volume": 0.8,
+          "load_on_low_memory": true,
+          "is3D": false
+        },
+        {
+          "name": "sounds/agartha/swell3",
+          "volume": 0.8,
+          "load_on_low_memory": true,
+          "is3D": false
+        }
+      ]
+    },
+    "agartha.horn": {
+      "category": "ambient",
+      "sounds": [
+        {
+          "name": "sounds/agartha/horn",
+          "volume": 1.0,
+          "load_on_low_memory": true,
+          "is3D": false
+        }
+      ]
     }
   }
 }

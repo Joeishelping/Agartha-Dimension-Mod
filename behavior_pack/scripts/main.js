@@ -123,8 +123,7 @@ function applyRealmAtmosphere(player) {
 function clearRealmState(player) {
   player.removeTag(TAG);
   run(player, `fog @s remove ${FOG_USER}`);
-  run(player, "stopsound @s agartha.ambience");
-  run(player, "stopsound @s agartha.wind");
+  for (const s of ["ambience", "wind", "wind_bed", "aurora_bed", "swell", "horn"]) run(player, `stopsound @s agartha.${s}`);
   forgetPlayer(player.id);
   player.removeEffect("night_vision");
   arrivedAt.delete(player.id);

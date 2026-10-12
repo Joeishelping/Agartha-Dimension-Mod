@@ -134,7 +134,9 @@ def ambience(sec=40):
         tt = np.clip(t - start, 0, None)
         shimmer += bell(f, tt, decay=0.9) * (t >= start) * 0.08
     mix = reverb(out + air + shimmer, 3.0, 0.5)
-    return normalize(loopable(mix), 0.7)
+    # Soft edges: the script replays it 2 s before it ends, so copies overlap
+    # and the bed never drops out.
+    return normalize(fade(loopable(mix), 2.0, 2.0), 0.8)
 
 
 def chime(seed_notes):
@@ -153,6 +155,60 @@ def wind(sec=12):
     howl = np.sin(2 * np.pi * np.cumsum(420 + 140 * smooth_noise(len(t), 0.3)) / SR) * 0.08
     body = band_noise(len(t), 150, 1400) * 0.8 + band_noise(len(t), 1500, 5000) * 0.15
     return normalize(fade((body + howl) * gust, 1.5, 2.5), 0.55)
+
+
+def wind_bed(sec=30):
+    """A steady, soft high-altitude wind that never stops (replayed back to back)."""
+    t = t_axis(sec)
+    swell = 0.6 + 0.4 * np.clip(smooth_noise(len(t), 0.12) * 0.5 + 0.5, 0, 1)
+    whistle = np.sin(2 * np.pi * np.cumsum(620 + 180 * smooth_noise(len(t), 0.2)) / SR) * 0.05
+    body = band_noise(len(t), 120, 900) * 0.8 + band_noise(len(t), 1200, 4000) * 0.12
+    return normalize(fade((body + whistle) * swell, 2.0, 2.0), 0.6)
+
+
+def aurora_bed(sec=30):
+    """The aurora's song: a high, slowly shifting glassy pad (night)."""
+    t = t_axis(sec)
+    out = np.zeros_like(t)
+    for f in [587.33, 739.99, 880.0, 1108.73, 1318.51]:
+        lfo = 0.5 + 0.5 * np.sin(2 * np.pi * rng.uniform(0.03, 0.09) * t + rng.uniform(0, 6))
+        out += np.sin(2 * np.pi * f * t + 0.6 * np.sin(2 * np.pi * 0.21 * t)) * lfo * 0.2
+        out += np.sin(2 * np.pi * f * 2.001 * t) * lfo * 0.04
+    out += band_noise(len(t), 3000, 9000) * 0.04
+    return normalize(fade(reverb(out, 3.0, 0.5), 2.0, 2.0), 0.5)
+
+
+def sparkle():
+    """A tiny glittering twinkle, like frost catching the light."""
+    t = t_axis(3)
+    out = np.zeros_like(t)
+    for k in range(rng.integers(4, 8)):
+        start = rng.uniform(0, 1.0)
+        f = rng.choice([2093.0, 2349.32, 2637.02, 2959.96, 3135.96, 3520.0])
+        tt = np.clip(t - start, 0, None)
+        out += bell(f, tt, decay=2.5) * (t >= start) * rng.uniform(0.3, 1)
+    return normalize(fade(reverb(out, 2.0, 0.6), 0.001, 0.6), 0.5)
+
+
+def swell(chord, sec=9):
+    """A distant choir swelling up and fading, like spirits singing."""
+    t = t_axis(sec)
+    env = np.sin(np.pi * np.clip(t / sec, 0, 1)) ** 2
+    out = np.zeros_like(t)
+    for f in chord:
+        out += voice(f, t, vib=0.006, bright=0.6) * env * 0.25
+    return normalize(reverb(out, 3.0, 0.7), 0.65)
+
+
+def horn(sec=8):
+    """A far-off war horn echoing over the mountains."""
+    t = t_axis(sec)
+    env = np.clip(t / 0.8, 0, 1) * np.clip((5.5 - t) / 1.5, 0, 1)
+    f = 110.0 * (1 + 0.01 * np.clip(t / 0.8, 0, 1))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    out = sum(np.sin(h * ph) / h ** 1.2 for h in range(1, 12)) * env
+    out = lowpass(out, 0.08)
+    return normalize(reverb(out, 3.5, 0.9), 0.6)
 
 
 def welcome():
@@ -200,6 +256,13 @@ if __name__ == "__main__":
         write_ogg(f"chime{i + 1}", chime(notes))
     write_ogg("wind1", wind())
     write_ogg("wind2", wind(10))
+    write_ogg("wind_bed", wind_bed())
+    write_ogg("aurora_bed", aurora_bed())
+    for i in range(3):
+        write_ogg(f"sparkle{i + 1}", sparkle())
+    for i, chord in enumerate([[293.66, 369.99, 440.0, 587.33], [261.63, 329.63, 392.0, 523.25], [246.94, 311.13, 369.99, 493.88]]):
+        write_ogg(f"swell{i + 1}", swell(chord))
+    write_ogg("horn", horn())
     write_ogg("welcome", welcome())
     write_ogg("portal", portal())
     write_ogg("bless", harp([293.66, 369.99, 440.0, 587.33, 739.99, 880.0]))

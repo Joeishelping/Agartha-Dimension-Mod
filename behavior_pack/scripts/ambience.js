@@ -3,8 +3,9 @@
 // of day.
 //
 //  * Everywhere: falling snow, drifting spirit lights, golden motes, rolling
-//    mist, the choir drone, gusts of wind, ice chimes.
-//  * Night: the aurora blazes, spirit lights multiply.
+//    mist. Never-ending sound beds (choir, high wind) with chimes, frost
+//    sparkles, spirit-choir swells, gusts and a far-off horn layered on top.
+//  * Night: the aurora blazes and sings, spirit lights multiply.
 //  * Day: soft god rays fall through the haze.
 //  * High up (mountains, the summit): the wind grows louder.
 //  * Near landmarks: each one has its own effect, e.g. light rising from the
@@ -17,7 +18,10 @@ import { world } from "@minecraft/server";
 import { REALM, B } from "./config.js";
 import { LAYOUT } from "./terrain.js";
 
-const AMBIENCE_TICKS = 20 * 37; // the 40 s choir loop, overlapped for a seamless bed
+// Bed lengths minus a 2 s overlap, so they never drop out.
+const CHOIR_TICKS = 20 * 38; // 40 s choir
+const WIND_BED_TICKS = 20 * 28; // 30 s wind
+const AURORA_BED_TICKS = 20 * 28; // 30 s aurora song
 
 const next = new Map(); // `${playerId}:${kind}` -> tick
 
@@ -36,8 +40,9 @@ export function ambienceReport() {
   return r;
 }
 
-function due(player, kind, tick, everyTicks) {
+function due(player, kind, tick, everyTicks, firstAfter = 0) {
   const key = `${player.id}:${kind}`;
+  if (firstAfter && !next.has(key)) next.set(key, tick + firstAfter);
   if (tick < (next.get(key) ?? 0)) return false;
   next.set(key, tick + Math.max(1, Math.round(everyTicks)));
   return true;
@@ -141,21 +146,46 @@ export function ambientTick(player, tick) {
   }
 
   // --- Sound --------------------------------------------------------------
-  if (due(player, "choir", tick, AMBIENCE_TICKS)) {
+  // Continuous beds, each replayed 2 s before it ends so the copies overlap
+  // and there is never silence: the choir always, the high wind always (louder
+  // up on the peaks), the aurora's song at night.
+  if (due(player, "choir", tick, CHOIR_TICKS)) {
     count("agartha.ambience");
-    player.playSound("agartha.ambience", { volume: 0.85 });
+    player.playSound("agartha.ambience", { volume: 1 });
   }
-  if (due(player, "wind", tick, rnd(12, 26) * 20 * (height > 50 ? 0.6 : 1))) {
+  if (due(player, "windbed", tick, WIND_BED_TICKS)) {
+    count("agartha.wind_bed");
+    player.playSound("agartha.wind_bed", { volume: Math.min(1, 0.55 + height / 150) });
+  }
+  if (night && due(player, "aurorabed", tick, AURORA_BED_TICKS)) {
+    count("agartha.aurora_bed");
+    player.playSound("agartha.aurora_bed", { volume: 0.9 });
+  }
+  // Layers on top, so there is always something happening.
+  if (due(player, "gust", tick, rnd(8, 16) * 20 * (height > 50 ? 0.6 : 1))) {
     count("agartha.wind");
-    player.playSound("agartha.wind", { volume: Math.min(1, 0.35 + height / 120 + Math.random() * 0.2) });
+    player.playSound("agartha.wind", { volume: Math.min(1, 0.45 + height / 120 + Math.random() * 0.2) });
   }
   const chimeRate = LANDMARKS.slice(0, 2).some((lm) => near(l, lm)) ? 0.6 : 1; // more chimes by the Pole and Yggdrasil
-  if (due(player, "chime", tick, rnd(6, 13) * 20 * chimeRate)) {
+  if (due(player, "chime", tick, rnd(3, 7) * 20 * chimeRate)) {
     const a = Math.random() * Math.PI * 2;
-    sound(dim, "agartha.chime", at(Math.cos(a) * rnd(4, 10), rnd(1, 4), Math.sin(a) * rnd(4, 10)), { pitch: rnd(0.85, 1.15) });
+    sound(dim, "agartha.chime", at(Math.cos(a) * rnd(3, 8), rnd(1, 4), Math.sin(a) * rnd(3, 8)), { pitch: rnd(0.85, 1.15) });
+  }
+  if (due(player, "sparkle", tick, rnd(2, 5) * 20 * (night ? 0.7 : 1))) {
+    const a = Math.random() * Math.PI * 2;
+    sound(dim, "agartha.sparkle", at(Math.cos(a) * rnd(2, 6), rnd(0, 3), Math.sin(a) * rnd(2, 6)), { pitch: rnd(0.9, 1.2) });
+  }
+  if (due(player, "swell", tick, rnd(18, 35) * 20)) {
+    count("agartha.swell");
+    player.playSound("agartha.swell", { volume: 0.8, pitch: rnd(0.95, 1.05) });
+  }
+  if (due(player, "horn", tick, rnd(90, 180) * 20, 20 * 60)) {
+    // A far-off horn from the halls in the mountains.
+    count("agartha.horn");
+    player.playSound("agartha.horn", { volume: 0.7, pitch: rnd(0.9, 1.05) });
   }
   if (night && due(player, "nightbell", tick, rnd(30, 60) * 20)) {
     // A deep, distant bell from the temple in the night.
-    sound(dim, "agartha.chime", at(rnd(-20, 20), 10, rnd(-20, 20)), { pitch: 0.5, volume: 0.9 });
+    sound(dim, "agartha.chime", at(rnd(-20, 20), 10, rnd(-20, 20)), { pitch: 0.5, volume: 1 });
   }
 }
