@@ -26,7 +26,7 @@
 import { world, system, GameMode, EquipmentSlot, ItemStack, BlockPermutation } from "@minecraft/server";
 import { REALM, REGION, B, IDS } from "./config.js";
 import { LAYOUT } from "./terrain.js";
-import { ensureRealmBuilt, eraseRealm, isRealmBuilt, isRealmBuilding, markRealmUnbuilt } from "./builder.js";
+import { ensureRealmBuilt, eraseRealm, isRealmBuilt, isRealmBuilding, markRealmUnbuilt, setBuilderDebug } from "./builder.js";
 import { buildGate } from "./gate.js";
 import { ambientTick, forgetPlayer, setAmbienceDebug, ambienceReport } from "./ambience.js";
 import { allFatherTick, talk, welcomeArrival, setAllFatherDebug } from "./allfather.js";
@@ -605,6 +605,7 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) 
       debugOn = message.trim().toLowerCase() !== "off";
       setAmbienceDebug(debugOn);
       setAllFatherDebug(debugOn);
+      setBuilderDebug(debugOn);
       reply(`§7Agartha debug logging ${debugOn ? "on (see the content log)" : "off"}.`);
       break;
     }

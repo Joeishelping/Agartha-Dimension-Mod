@@ -131,6 +131,10 @@ function removeTickingArea(dim) {
 
 let building = false;
 let mode = "forge";
+let builderDebug = false;
+export function setBuilderDebug(on) {
+  builderDebug = on;
+}
 const waiters = [];
 let forger;
 
@@ -281,16 +285,21 @@ function* buildJob(kind) {
         if (done.has(t)) continue;
         const tile = tiles[t];
         notify("onProgress", Math.round((done.size / tiles.length) * 100));
+        const t0 = system.currentTick;
         if (!(yield* loadTile(dim, tile))) continue; // retried on the next pass
+        const t1 = system.currentTick;
         if (kind === "erase") removeEntities(dim, tile);
+        let n = 0;
         for (const op of opsFor(tile)) {
           try {
             applyOp(dim, op, ox, oz, cmdId);
           } catch (e) {
             if (failures++ < 5) console.warn(`[Agartha] op failed ${JSON.stringify(op)}: ${e}`);
           }
+          n++;
           yield;
         }
+        if (builderDebug) console.warn(`[Agartha debug] ${kind} tile ${t + 1}/${tiles.length}: load ${t1 - t0} ticks, ${n} ops in ${system.currentTick - t1} ticks`);
         done.add(t);
         world.setDynamicProperty(key, JSON.stringify({ v: REALM.buildVersion, done: [...done] }));
       }
