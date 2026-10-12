@@ -28,7 +28,7 @@ The **return portal** stands right behind the arrival point. Walk through it and
 Falling off Agartha through the clouds is instant death, followed by a normal respawn in the mortal world.
 
 ## The All-Father
-The All-Father stands before the Gates of Agartha. He walks slowly around the plaza, watches those who come near, and raises his hand to bless them. As each traveller arrives he turns to them, opens his arms, and welcomes them home ("Welcome home, my child. You did well."). He can't be harmed or pushed and has no name tag.
+The All-Father keeps the Heavenly Gates. He wanders slowly before them and greets each arrival with open arms ("Welcome home, my child. You did well."). Anyone who comes near after a while away gets a blessing. **Talk to him** (tap or right-click, or the *Speak* button on mobile) and he shares the lore of Agartha, points the way, blesses you with regeneration, and every so often gives you a Horn of Honey Mead. On his own he gazes toward the Pole and raises his arms to call down light, and at night he summons the aurora over the Gates. He can't be harmed or pushed and has no name tag.
 
 **Changing his skin:** replace `resource_pack/textures/entity/allfather.png` with any **64×64 Minecraft skin** (classic, 4-pixel arms). Any skin editor works. Rebuild the `.mcaddon` (or edit the installed resource pack) and he'll wear it.
 
@@ -54,8 +54,8 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | **Greek wonders** | Two round temples (tholoi) with golden-banded domes; the temple becomes an **ice palace** with domed towers, more spires, a golden frieze, roof statues and blue-flamed braziers. |
 | **Norse wonders** | A ring of rune stones, and white statues of stags, a polar bear, a horse and swans standing on the frozen lake. |
 | **Mountains & sky** | A crown of needle-peaked mountains with white, ice-blue and stone strata and snow-dusted ledges. Cloud belts drift between the peaks. Beyond the edge, **snowy peaks rise out of an unbroken sea of clouds**, and towering cloud walls ring the realm, so the world below is never seen. |
-| **Sound** | An original soundscape made for Agartha, carried by an invisible aura that follows each player so it plays on their own device: a slow choir drone that never stops, crystal wind-chimes drifting past, gusts of the north wind, an angelic swell as you arrive, a harp when the All-Father blesses you, and a low hum around both portals. |
-| **Atmosphere** | **Aurora**: permanent ribbons of coloured glass hang in the northern sky, and aurora particle curtains ripple overhead day and night. There's drifting mist, falling snow, golden light motes, glowing **spirit lights**, soft **god rays** descending from the sky, **spirit orbs** floating over the lake, and a haze that fades the horizon into white. No hostile mobs spawn. |
+| **Sound** | An original soundscape made for Agartha that never stops while you're there: a slow choir drone that never stops, crystal wind-chimes drifting past, gusts of the north wind, an angelic swell as you arrive, a harp when the All-Father blesses you, and a low hum around both portals. |
+| **Atmosphere** | Always on, and it changes with time and place: snow keeps falling, spirit lights drift (more at night), golden motes rise, mist rolls past. The aurora blazes at night, god rays fall by day, and the wind grows louder on the peaks. Each landmark has its own touch: light rising through the Pole's halos, glowing lights under Yggdrasil, holy light over the temple, mist on the lake, a deep bell in the night. **Aurora**: permanent ribbons of coloured glass hang in the northern sky, and aurora particle curtains ripple overhead day and night. There's drifting mist, falling snow, golden light motes, glowing **spirit lights**, soft **god rays** descending from the sky, **spirit orbs** floating over the lake, and a haze that fades the horizon into white. No hostile mobs spawn. |
 
 | | |
 |---|---|
@@ -84,7 +84,7 @@ Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.7.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.7.0 (Behavior)** and **Agartha v1.7.0 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.8.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.8.0 (Behavior)** and **Agartha v1.8.0 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 

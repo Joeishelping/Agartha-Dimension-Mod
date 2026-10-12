@@ -58,8 +58,22 @@ expect(inRealm(p) && Math.abs(p.location.z - (OZ + REALM.arrival.z)) < 1 && Math
 ticks(80);
 expect(p.log.some((e) => e[0] === "msg" && e[1].includes("All-Father")), "the All-Father welcomes the arrival");
 
-// The aura follows the player through Agartha.
-expect(mc.spawned.some(([id]) => id === "agartha:aura"), "an aura is summoned to carry Agartha's effects and sounds");
+// Ambience runs continuously, not just once.
+mc.soundLog.length = 0;
+mc.fxLog.length = 0;
+ticks(20 * 90);
+expect(inRealm(p), "still in Agartha after a minute and a half");
+const count = (arr, id) => arr.filter((x) => x === id).length;
+expect(count(mc.soundLog, "agartha.ambience") >= 2, `the choir keeps playing (${count(mc.soundLog, "agartha.ambience")}x in 90 s)`);
+expect(count(mc.soundLog, "agartha.chime") >= 6 && count(mc.soundLog, "agartha.wind") >= 3, `chimes and wind recur (${count(mc.soundLog, "agartha.chime")} chimes, ${count(mc.soundLog, "agartha.wind")} gusts)`);
+expect(count(mc.fxLog, "agartha:snowfall") > 200 && count(mc.fxLog, "agartha:aurora") > 50, `effects never stop (${mc.fxLog.length} effects in 90 s)`);
+expect(new Set(mc.fxLog).size >= 6, `many kinds of effects (${[...new Set(mc.fxLog)].join(", ")})`);
+// Talking to the All-Father.
+const af = mc.spawned.find(([id]) => id === "agartha:allfather");
+const talkEv = { player: p, target: { typeId: "agartha:allfather", isValid: true, location: { x: OX, y: B + 1, z: OZ + 165 }, dimension: dim, teleport() {}, playAnimation() {} } };
+fire("before.playerInteractWithEntity", talkEv);
+ticks(60);
+expect(talkEv.cancel === true && p.log.some((e) => e[0] === "msg" && e[1].includes("All-Father") && !e[1].includes("Welcome")), "talking to the All-Father gives lore");
 fire("system.scriptEventReceive", { id: "agartha:fx_test", message: "", sourceEntity: p });
 expect(p.log.some((e) => e[0] === "msg" && e[1].includes("Playing Agartha")), "fx_test plays the effects on demand");
 
@@ -76,7 +90,6 @@ expect(blocks.get(exitKey) === "agartha:portal", "the exit portal mends itself")
 p.location = { x: OX + 0.5, y: B + 1, z: OZ + 189.5 };
 ticks(2);
 expect(!inRealm(p) && Math.abs(p.location.z - 51.5) < 0.01, "the exit returns you before the Heavenly Gate");
-expect(mc.removed.includes("agartha:aura"), "the aura is dismissed when you leave");
 ticks(6);
 expect(!inRealm(p), "no instant re-entry after returning");
 

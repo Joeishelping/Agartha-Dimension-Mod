@@ -6,3 +6,4 @@ item.agartha.gate_keystone=Keystone of the Heavenly Gate
 tile.agartha:cloud.name=Agartha Cloud
 tile.agartha:portal.name=Heavenly Gate of Agartha
 agartha:itemGroup.agartha=Agartha
+action.interact.agartha_speak=Speak

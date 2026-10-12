@@ -28,6 +28,8 @@ import { REALM, REGION, B, IDS } from "./config.js";
 import { LAYOUT } from "./terrain.js";
 import { ensureRealmBuilt, eraseRealm, isRealmBuilt, isRealmBuilding, markRealmUnbuilt } from "./builder.js";
 import { buildGate } from "./gate.js";
+import { ambientTick, forgetPlayer } from "./ambience.js";
+import { allFatherTick, talk, welcomeArrival } from "./allfather.js";
 
 const TAG = "agartha_in_realm";
 const RETURN_KEY = "agartha:return";
@@ -42,19 +44,8 @@ const TRAVEL_COOLDOWN_TICKS = 40;
 const lastTravel = new Map();
 const arrivedAt = new Map();
 const lastSafe = new Map();
-const nextAmbience = new Map();
-const nextChime = new Map();
-const nextWind = new Map();
-const AMBIENCE_TICKS = 20 * 37; // the 40 s choir loop, overlapped for a seamless bed
-const AURA = "agartha:aura";
-const auras = new Map();
 
-const WELCOMES = [
-  ["Welcome home, my child.", "You did well."],
-  ["At last you have come home.", "Rest now. You did well, my child."],
-  ["The long road is behind you.", "Welcome to Agartha. You have earned your place here."],
-  ["I have watched over you, child.", "Welcome home. You did well."],
-];
+
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -134,8 +125,7 @@ function clearRealmState(player) {
   run(player, `fog @s remove ${FOG_USER}`);
   run(player, "stopsound @s agartha.ambience");
   run(player, "stopsound @s agartha.wind");
-  nextAmbience.delete(player.id);
-  removeAura(player.id);
+  forgetPlayer(player.id);
   player.removeEffect("night_vision");
   arrivedAt.delete(player.id);
 }
@@ -363,24 +353,7 @@ function allFather() {
 
 function welcome(player) {
   if (!player.isValid || !player.hasTag(TAG)) return;
-  const af = allFather();
-  if (af) {
-    try {
-      af.teleport(af.location, { facingLocation: player.location });
-      af.playAnimation("animation.agartha.allfather.welcome", { blendOutTime: 0.4 });
-      af.dimension.spawnParticle("agartha:holy_motes", { x: af.location.x, y: af.location.y + 3, z: af.location.z });
-    } catch {
-      // cosmetic
-    }
-  }
-  const [a, b] = WELCOMES[Math.floor(Math.random() * WELCOMES.length)];
-  player.playSound("agartha.welcome");
-  player.sendMessage(`§6§oThe All-Father: §r§f${a}`);
-  system.runTimeout(() => {
-    if (!player.isValid) return;
-    player.sendMessage(`§6§oThe All-Father: §r§f${b}`);
-    player.onScreenDisplay.setActionBar(`§f§o"${b}"`);
-  }, 50);
+  welcomeArrival(player, allFather(), system.currentTick);
 }
 
 function leaveRealm(player) {
@@ -456,6 +429,16 @@ function useKeystone(player, block) {
   }
   raiseGate(player, block);
 }
+
+// Talking to the All-Father.
+world.beforeEvents.playerInteractWithEntity.subscribe((ev) => {
+  if (ev.target?.typeId !== ALLFATHER) return;
+  ev.cancel = true;
+  const { player, target } = ev;
+  system.run(() => {
+    if (player.isValid && target.isValid) talk(player, target);
+  });
+});
 
 world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
   if (ev.block?.typeId === IDS.portal) {
@@ -608,10 +591,6 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, sourceEntity }) => {
         portalOk = false;
       }
       lines.push(`§bPortal block: §f${portalOk ? "loaded" : "MISSING — activate both Agartha packs"}`);
-      if (player) {
-        const a = auras.get(player.id);
-        lines.push(`§bYour aura (effects & sounds): §f${a?.isValid ? "with you" : player.hasTag(TAG) ? "not summoned — script effects used instead" : "only inside Agartha"}`);
-      }
       for (const l of lines) reply(l);
       break;
     }
@@ -658,78 +637,6 @@ function mendExit() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// The aura: an invisible companion that follows each player through Agartha.
-// Its effects run on the player's own device (snow, spirit lights, aurora,
-// mist, the choir, wind and chimes), so they never depend on script timing.
-// ---------------------------------------------------------------------------
-
-function removeAura(playerId) {
-  const a = auras.get(playerId);
-  auras.delete(playerId);
-  try {
-    if (a?.isValid) a.remove();
-  } catch {
-    // already gone
-  }
-}
-
-function ensureAura(player) {
-  let a = auras.get(player.id);
-  if (a && !a.isValid) a = undefined;
-  if (!a) {
-    try {
-      a = player.dimension.spawnEntity(AURA, player.location);
-      a.setDynamicProperty("agartha:owner", player.id);
-      auras.set(player.id, a);
-    } catch {
-      return undefined;
-    }
-  }
-  try {
-    a.teleport(player.location, { dimension: player.dimension });
-  } catch {
-    // unloaded for a moment
-  }
-  return a;
-}
-
-/** Auras left behind (logouts, crashes) are cleared away. */
-function sweepAuras() {
-  try {
-    const dim = world.getDimension("overworld");
-    for (const e of dim.getEntities({ type: AURA })) {
-      const owner = e.getDynamicProperty("agartha:owner");
-      if (!owner || auras.get(owner) !== e) e.remove();
-    }
-  } catch {
-    // nothing loaded
-  }
-}
-
-/** The sound of heaven: a choir bed, ice chimes on the air, the north wind. */
-function soundscape(player, tick) {
-  const id = player.id;
-  if (tick >= (nextAmbience.get(id) ?? 0)) {
-    player.playSound("agartha.ambience");
-    nextAmbience.set(id, tick + AMBIENCE_TICKS);
-  }
-  if (tick >= (nextChime.get(id) ?? 0)) {
-    const l = player.location;
-    const a = Math.random() * Math.PI * 2;
-    try {
-      player.dimension.playSound("agartha.chime", { x: l.x + Math.cos(a) * 8, y: l.y + 3, z: l.z + Math.sin(a) * 8 }, { pitch: 0.85 + Math.random() * 0.3 });
-    } catch {
-      // cosmetic
-    }
-    nextChime.set(id, tick + 20 * (8 + Math.random() * 14));
-  }
-  if (tick >= (nextWind.get(id) ?? 0)) {
-    player.playSound("agartha.wind", { volume: 0.5 + Math.random() * 0.4 });
-    nextWind.set(id, tick + 20 * (14 + Math.random() * 20));
-  }
-}
-
 /** Both portals hum softly to anyone standing near them. */
 function portalHum() {
   const spots = [];
@@ -752,6 +659,7 @@ function portalHum() {
 function realmTick() {
   const tick = system.currentTick;
   let anyoneHere = false;
+  const inRealm = [];
   for (const player of world.getAllPlayers()) {
     if (player.getGameMode() !== GameMode.Spectator && inPortal(player)) {
       usePortal(player);
@@ -776,43 +684,21 @@ function realmTick() {
       continue;
     }
     if (tick % 200 === 0) player.addEffect("night_vision", 20 * 30, { showParticles: false });
-    const aura = tick % 10 === 0 ? ensureAura(player) : auras.get(player.id);
-    if (!aura?.isValid) {
-      // No aura (it could not be summoned): play everything from the script instead.
-      if (tick % 10 === 0) spawnFx(player, "agartha:snowfall", 0, 7, 0);
-      if (tick % 40 === 0) spawnFx(player, "agartha:spirit_lights", 0, 2, 0);
-      if (tick % 50 === 0) spawnFx(player, "agartha:mist", (Math.random() - 0.5) * 30, -1, (Math.random() - 0.5) * 30);
-      soundscape(player, tick);
-    }
-    if (tick % 30 === 0) {
-      // Extra aurora curtains overhead, mostly toward the northern mountains.
-      const a = (Math.random() < 0.7 ? -Math.PI / 2 : 0) + (Math.random() - 0.5) * Math.PI * 1.4;
-      const d = 18 + Math.random() * 26;
-      spawnFx(player, "agartha:aurora", Math.cos(a) * d, 30 + Math.random() * 18, Math.sin(a) * d);
-    }
-    if (tick % 60 === 0) spawnFx(player, "agartha:holy_motes", (Math.random() - 0.5) * 16, 1, (Math.random() - 0.5) * 16);
-    if (tick % 140 === 0 && Math.random() < 0.7) {
-      spawnFx(player, "agartha:god_rays", (Math.random() - 0.5) * 40, 32, (Math.random() - 0.5) * 40);
-    }
+    inRealm.push(player);
+    ambientTick(player, tick);
   }
 
   if (anyoneHere && tick % 200 === 0 && !isRealmBuilding()) mendExit();
-  if (tick % 400 === 0) sweepAuras();
   if (tick % 110 === 0 && !isRealmBuilding()) portalHum();
-  if (anyoneHere && tick % 360 === 0 && !isRealmBuilding()) {
-    // The All-Father blesses those near the Gates.
+  if (anyoneHere && tick % 20 === 0 && !isRealmBuilding()) {
     try {
-      const af = allFather();
-      const near = af?.dimension.getPlayers({ location: af.location, maxDistance: 20 });
-      if (near?.length) {
-        af.playAnimation("animation.agartha.allfather.bless", { blendOutTime: 0.4 });
-        af.dimension.playSound("agartha.bless", af.location);
-        af.dimension.spawnParticle("agartha:holy_motes", { x: af.location.x, y: af.location.y + 4, z: af.location.z });
-      }
+      const t = world.getTimeOfDay();
+      allFatherTick(allFather(), inRealm, tick, t > 12800 && t < 23200);
     } catch {
       // cosmetic
     }
   }
+
 
   // Anything else that falls through the clouds is gone too.
   if (anyoneHere && tick % 10 === 0 && !isRealmBuilding()) {
