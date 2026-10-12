@@ -5,7 +5,7 @@
 //  * Everywhere: falling snow, drifting spirit lights, golden motes, rolling
 //    mist. Never-ending sound beds (choir, high wind) with chimes, frost
 //    sparkles, spirit-choir swells, a far-off horn and (at night) gusts on top.
-//  * Night: the aurora blazes and sings, spirit lights multiply.
+//  * Night: the aurora blazes, spirit lights multiply.
 //  * Day: soft god rays fall through the haze.
 //  * High up (mountains, the summit): the wind grows louder.
 //  * Near landmarks: each one has its own effect, e.g. light rising from the
@@ -20,7 +20,6 @@ import { LAYOUT } from "./terrain.js";
 
 // Bed lengths minus a 2 s overlap, so they never drop out.
 const WIND_BED_TICKS = 20 * 28; // 30 s wind
-const AURORA_BED_TICKS = 20 * 28; // 30 s aurora song
 
 const next = new Map(); // `${playerId}:${kind}` -> tick
 
@@ -169,7 +168,7 @@ export function ambientTick(player, tick) {
   // --- Sound --------------------------------------------------------------
   // Continuous beds, each replayed 2 s before it ends so the copies overlap
   // and there is never silence: the choir always, the high wind always (louder
-  // up on the peaks), the aurora's song at night.
+  // up on the peaks).
   if (due(player, "choir", tick, musicTicks())) {
     count("agartha.ambience");
     player.playSound("agartha.ambience", { volume: 1 });
@@ -177,10 +176,6 @@ export function ambientTick(player, tick) {
   if (due(player, "windbed", tick, WIND_BED_TICKS)) {
     count("agartha.wind_bed");
     player.playSound("agartha.wind_bed", { volume: Math.min(1, 0.55 + height / 150) });
-  }
-  if (night && due(player, "aurorabed", tick, AURORA_BED_TICKS)) {
-    count("agartha.aurora_bed");
-    player.playSound("agartha.aurora_bed", { volume: 0.9 });
   }
   // Layers on top, so there is always something happening.
   if (night && due(player, "gust", tick, rnd(12, 24) * 20 * (height > 50 ? 0.7 : 1))) {

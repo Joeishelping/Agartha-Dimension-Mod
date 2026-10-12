@@ -22,19 +22,22 @@
 //   agartha:gate_reset   forget the Gate so a new one can be raised
 //   agartha:status       report whether Agartha, the Gate and its portal are working
 //   agartha:fx_test      play Agartha's sounds and effects where you stand
+//   agartha:music_length set the loop length of a custom ambience.ogg
+// Hell (beneath Agartha) has its own commands: see hell.js.
 
 import { world, system, GameMode, EquipmentSlot, ItemStack, BlockPermutation } from "@minecraft/server";
 import { REALM, REGION, B, IDS } from "./config.js";
 import { LAYOUT } from "./terrain.js";
-import { ensureRealmBuilt, eraseRealm, isRealmBuilt, isRealmBuilding, markRealmUnbuilt, setBuilderDebug } from "./builder.js";
+import { ensureRealmBuilt, eraseRealm, isRealmBuilt, isRealmBuilding, isBuilderBusy, markRealmUnbuilt, setBuilderDebug } from "./builder.js";
 import { buildGate } from "./gate.js";
 import { ambientTick, forgetPlayer, setAmbienceDebug, ambienceReport, setMusicLength } from "./ambience.js";
 import { allFatherTick, talk, welcomeArrival, setAllFatherDebug } from "./allfather.js";
+import { readJson, liftForger, restoreForger } from "./forger.js";
+import { hellStatusLines, setHellDebug } from "./hell.js";
 
 const TAG = "agartha_in_realm";
 const RETURN_KEY = "agartha:return";
 const GATE_KEY = "agartha:gate";
-const FORGER_KEY = "agartha:forger_restore";
 const FOG_ID = "agartha:heaven_fog";
 const FOG_USER = "agartha_realm";
 const ALLFATHER = "agartha:allfather";
@@ -64,14 +67,6 @@ function overRealmFootprint(entity) {
 
 function inRealmVolume(entity) {
   return overRealmFootprint(entity) && entity.location.y > REALM.killY - 48;
-}
-
-function readJson(v) {
-  try {
-    return JSON.parse(v ?? "null");
-  } catch {
-    return null;
-  }
 }
 
 /** The Heavenly Gate in the mortal world: { x, y, z, dim, axis, portal } or null. */
@@ -123,7 +118,7 @@ function applyRealmAtmosphere(player) {
 function clearRealmState(player) {
   player.removeTag(TAG);
   run(player, `fog @s remove ${FOG_USER}`);
-  for (const s of ["ambience", "wind", "wind_bed", "aurora_bed", "swell", "horn"]) run(player, `stopsound @s agartha.${s}`);
+  for (const s of ["ambience", "wind", "wind_bed", "swell", "horn"]) run(player, `stopsound @s agartha.${s}`);
   forgetPlayer(player.id);
   player.removeEffect("night_vision");
   arrivedAt.delete(player.id);
@@ -145,27 +140,6 @@ function giveKeystone(player) {
 // ---------------------------------------------------------------------------
 // Forging the realm (in person)
 // ---------------------------------------------------------------------------
-
-function restoreForger(player) {
-  const saved = readJson(player.getDynamicProperty(FORGER_KEY));
-  if (!saved) return;
-  player.setDynamicProperty(FORGER_KEY, undefined);
-  try {
-    player.setGameMode(saved.mode);
-    player.teleport({ x: saved.x, y: saved.y, z: saved.z }, { dimension: world.getDimension(saved.dim) });
-  } catch (e) {
-    console.warn(`[Agartha] could not restore forger: ${e}`);
-  }
-}
-
-/** Puts the operator in spectator mode so they can be carried over the site. */
-function liftForger(player) {
-  if (!player.getDynamicProperty(FORGER_KEY)) {
-    const l = player.location;
-    player.setDynamicProperty(FORGER_KEY, JSON.stringify({ mode: player.getGameMode(), x: l.x, y: l.y, z: l.z, dim: player.dimension.id }));
-  }
-  player.setGameMode(GameMode.Spectator);
-}
 
 function erase(player) {
   if (world.getAllPlayers().some((p) => p.hasTag(TAG))) {
@@ -534,7 +508,7 @@ world.afterEvents.entitySpawn.subscribe(({ entity }) => {
 
 world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
   if (!player) return;
-  if (initialSpawn && !isRealmBuilding()) restoreForger(player);
+  if (initialSpawn && !isBuilderBusy()) restoreForger(player);
   if (!player.hasTag(TAG)) return;
   if (initialSpawn && inRealmVolume(player)) {
     arrivedAt.set(player.id, system.currentTick);
@@ -597,6 +571,7 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) 
         portalOk = false;
       }
       lines.push(`§bPortal block: §f${portalOk ? "loaded" : "MISSING — activate both Agartha packs"}`);
+      lines.push(...hellStatusLines());
       for (const l of lines) reply(l);
       break;
     }
@@ -605,6 +580,7 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) 
       setAmbienceDebug(debugOn);
       setAllFatherDebug(debugOn);
       setBuilderDebug(debugOn);
+      setHellDebug(debugOn);
       reply(`§7Agartha debug logging ${debugOn ? "on (see the content log)" : "off"}.`);
       break;
     }

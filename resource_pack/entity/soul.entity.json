@@ -1,0 +1,28 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "agartha:soul",
+      "materials": {
+        "default": "entity_alphablend"
+      },
+      "textures": {
+        "default": "textures/entity/soul"
+      },
+      "geometry": {
+        "default": "geometry.agartha.allfather"
+      },
+      "animations": {
+        "climb": "animation.agartha.soul.climb"
+      },
+      "scripts": {
+        "animate": [
+          "climb"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

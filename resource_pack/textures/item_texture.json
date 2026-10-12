@@ -10,6 +10,9 @@
     },
     "agartha_gate_keystone": {
       "textures": "textures/items/gate_keystone"
+    },
+    "agartha_heart_scarab": {
+      "textures": "textures/items/heart_scarab"
     }
   }
 }

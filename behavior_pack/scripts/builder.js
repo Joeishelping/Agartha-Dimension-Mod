@@ -1,4 +1,5 @@
-// Builds the realm in the world from the blueprint, one tile at a time.
+// Builds a site (Agartha, or Hell beneath it) in the world from its
+// blueprint, one tile at a time.
 //
 // Minecraft only lets scripts write into loaded chunks, and far-away chunks
 // can be slow to load. So each 64x64 tile is loaded two ways at once: the
@@ -10,12 +11,42 @@
 // written.
 
 import { world, system, BlockPermutation } from "@minecraft/server";
-import { REALM, listTiles, isInsideRegion } from "./config.js";
+import { REALM, HELL, listTiles, listHellTiles, isInsideRegion, isInsideHell } from "./config.js";
 import { tileOps, eraseOps } from "./blueprint.js";
+import { hellTileOps, hellEraseOps } from "./hell_blueprint.js";
+
+// The places this builder can forge. Both share one origin (Hell lies beneath
+// Agartha) and one chunk-aligned tile grid.
+export const SITES = {
+  agartha: {
+    id: "agartha",
+    name: "Agartha",
+    builtKey: "agartha:built_version",
+    progressKey: "agartha:build_progress",
+    version: REALM.buildVersion,
+    tiles: listTiles,
+    ops: { forge: tileOps, erase: eraseOps },
+    inside: isInsideRegion,
+    probeY: REALM.baseY,
+    hoverY: REALM.baseY + 40,
+    entityY: [REALM.clearFromY, REALM.clearToY],
+  },
+  hell: {
+    id: "hell",
+    name: "Hell",
+    builtKey: "agartha:hell_built_version",
+    progressKey: "agartha:hell_build_progress",
+    version: HELL.buildVersion,
+    tiles: listHellTiles,
+    ops: { forge: hellTileOps, erase: hellEraseOps },
+    inside: isInsideHell,
+    probeY: 0,
+    hoverY: -10,
+    entityY: [HELL.minY, HELL.maxY],
+  },
+};
 
 const TICKING_AREA = "agartha_build";
-const BUILT_KEY = "agartha:built_version";
-const PROGRESS_KEY = "agartha:build_progress";
 const LOAD_WAIT_TICKS = 20 * 15;
 const LOAD_ATTEMPTS = 4;
 
@@ -40,6 +71,9 @@ const ALIASES = {
   "minecraft:yellow_wool": [["minecraft:wool", { color: "yellow" }]],
   "minecraft:blue_wool": [["minecraft:wool", { color: "blue" }]],
   "minecraft:dark_oak_fence": [["minecraft:fence", { wood_type: "dark_oak" }]],
+  "minecraft:chain": [["minecraft:iron_chain", {}]],
+  "minecraft:skeleton_skull": [["minecraft:skull", {}]],
+  "minecraft:crimson_wall_sign": [["minecraft:wall_sign", {}]],
 };
 /** Older engines used one block id with a colour/wood state for these. */
 function colourAlias(id) {
@@ -103,8 +137,12 @@ function overworld() {
   return world.getDimension("overworld");
 }
 
+export function isBuilt(site) {
+  return world.getDynamicProperty(site.builtKey) === site.version;
+}
+
 export function isRealmBuilt() {
-  return world.getDynamicProperty(BUILT_KEY) === REALM.buildVersion;
+  return isBuilt(SITES.agartha);
 }
 
 function tileLoaded(dim, tile) {
@@ -115,7 +153,7 @@ function tileLoaded(dim, tile) {
     [tile.maxX, tile.maxZ], [(tile.minX + tile.maxX) >> 1, (tile.minZ + tile.maxZ) >> 1],
   ];
   try {
-    return pts.every(([x, z]) => dim.getBlock({ x: ox + x, y: REALM.baseY, z: oz + z }) !== undefined);
+    return pts.every(([x, z]) => dim.getBlock({ x: ox + x, y: site.probeY, z: oz + z }) !== undefined);
   } catch {
     return false;
   }
@@ -135,6 +173,7 @@ let currentArea;
 
 let building = false;
 let mode = "forge";
+let site = SITES.agartha;
 let builderDebug = false;
 export function setBuilderDebug(on) {
   builderDebug = on;
@@ -142,18 +181,28 @@ export function setBuilderDebug(on) {
 const waiters = [];
 let forger;
 
+/** True while the given site (default: Agartha) is being forged or erased. */
+export function isBuilding(which = SITES.agartha) {
+  return building && site === which;
+}
+
 export function isRealmBuilding() {
+  return isBuilding(SITES.agartha);
+}
+
+/** True while anything at all is being forged or erased. */
+export function isBuilderBusy() {
   return building;
 }
 
-/** Forgets the built realm so the next ensureRealmBuilt() rebuilds it. */
-export function markRealmUnbuilt() {
-  world.setDynamicProperty(BUILT_KEY, undefined);
-  world.setDynamicProperty(PROGRESS_KEY, undefined);
+/** Forgets a built site so the next ensureBuilt() rebuilds it. */
+export function markUnbuilt(which) {
+  world.setDynamicProperty(which.builtKey, undefined);
+  world.setDynamicProperty(which.progressKey, undefined);
 }
 
-export function isRealmErasing() {
-  return building && mode === "erase";
+export function markRealmUnbuilt() {
+  markUnbuilt(SITES.agartha);
 }
 
 /**
@@ -161,13 +210,13 @@ export function isRealmErasing() {
  * onProgress(percent) is called as tiles complete. If `player` is given they
  * are flown over the site while it builds (the caller sets spectator mode).
  */
-export function ensureRealmBuilt(onReady, onProgress, onError, player) {
-  if (isRealmBuilt()) {
+export function ensureBuilt(which, onReady, onProgress, onError, player) {
+  if (isBuilt(which)) {
     onReady?.();
     return;
   }
-  if (building && mode !== "forge") {
-    onError?.("Agartha is being erased right now.");
+  if (building && (mode !== "forge" || site !== which)) {
+    onError?.(`${site.name} is being ${mode === "erase" ? "erased" : "forged"} right now; try again when it finishes.`);
     return;
   }
   waiters.push({ onReady, onProgress, onError });
@@ -175,28 +224,38 @@ export function ensureRealmBuilt(onReady, onProgress, onError, player) {
   if (building) return;
   building = true;
   mode = "forge";
+  site = which;
   system.runJob(buildJob("forge"));
 }
 
-/** Wipes everything the forge built and forgets the realm. */
-export function eraseRealm(onDone, onProgress, onError, player) {
+export function ensureRealmBuilt(onReady, onProgress, onError, player) {
+  ensureBuilt(SITES.agartha, onReady, onProgress, onError, player);
+}
+
+/** Wipes everything the forge built for a site and forgets it. */
+export function eraseSite(which, onDone, onProgress, onError, player) {
   if (building) {
-    onError?.("Agartha is busy being forged or erased; try again when it finishes.");
+    onError?.(`${site.name} is busy being forged or erased; try again when it finishes.`);
     return;
   }
   waiters.push({ onReady: onDone, onProgress, onError });
   forger = player;
   building = true;
   mode = "erase";
-  world.setDynamicProperty(BUILT_KEY, undefined);
+  site = which;
+  world.setDynamicProperty(which.builtKey, undefined);
   system.runJob(buildJob("erase"));
+}
+
+export function eraseRealm(onDone, onProgress, onError, player) {
+  eraseSite(SITES.agartha, onDone, onProgress, onError, player);
 }
 
 function removeEntities(dim, tile) {
   try {
     const found = dim.getEntities({
-      location: { x: REALM.originX + tile.minX, y: REALM.clearFromY, z: REALM.originZ + tile.minZ },
-      volume: { x: tile.maxX - tile.minX + 1, y: REALM.clearToY - REALM.clearFromY, z: tile.maxZ - tile.minZ + 1 },
+      location: { x: REALM.originX + tile.minX, y: site.entityY[0], z: REALM.originZ + tile.minZ },
+      volume: { x: tile.maxX - tile.minX + 1, y: site.entityY[1] - site.entityY[0], z: tile.maxZ - tile.minZ + 1 },
       excludeTypes: ["minecraft:player"],
     });
     for (const e of found) e.remove();
@@ -225,7 +284,7 @@ function hover(dim, tile) {
   const x = REALM.originX + (tile.minX + tile.maxX + 1) / 2;
   const z = REALM.originZ + (tile.minZ + tile.maxZ + 1) / 2;
   try {
-    forger.teleport({ x, y: REALM.baseY + 40, z }, { dimension: dim, rotation: { x: 89, y: 0 } });
+    forger.teleport({ x, y: site.hoverY, z }, { dimension: dim, rotation: { x: 89, y: 0 } });
   } catch {
     // player busy (e.g. respawning); the ticking area still works
   }
@@ -237,9 +296,9 @@ function* loadTile(dim, tile) {
   const oz = REALM.originZ;
   for (let attempt = 0; attempt < LOAD_ATTEMPTS; attempt++) {
     if (currentArea) removeTickingArea(dim, currentArea);
-    currentArea = `${TICKING_AREA}_${tile.i + 9}_${tile.j + 9}_${attempt}`;
+    currentArea = `${TICKING_AREA}_${site.id}_${tile.i + 9}_${tile.j + 9}_${attempt}`;
     try {
-      dim.runCommand(`tickingarea add ${ox + tile.minX} ${REALM.baseY} ${oz + tile.minZ} ${ox + tile.maxX} ${REALM.baseY} ${oz + tile.maxZ} ${currentArea} true`);
+      dim.runCommand(`tickingarea add ${ox + tile.minX} ${site.probeY} ${oz + tile.minZ} ${ox + tile.maxX} ${site.probeY} ${oz + tile.maxZ} ${currentArea} true`);
     } catch (e) {
       if (attempt === 0) console.warn(`[Agartha] ticking area unavailable (${e}); relying on the forging player.`);
     }
@@ -259,20 +318,21 @@ function* loadTile(dim, tile) {
 function readProgress(key) {
   try {
     const p = JSON.parse(world.getDynamicProperty(key) ?? "null");
-    if (p?.v === REALM.buildVersion) return p;
+    if (p?.v === site.version) return p;
   } catch {
     // corrupt; start over
   }
-  return { v: REALM.buildVersion, done: [] };
+  return { v: site.version, done: [] };
 }
 
 function* buildJob(kind) {
+  const PROGRESS_KEY = site.progressKey;
   const key = kind === "erase" ? `${PROGRESS_KEY}_erase` : PROGRESS_KEY;
-  const opsFor = kind === "erase" ? eraseOps : tileOps;
+  const opsFor = site.ops[kind];
   const dim = overworld();
   const ox = REALM.originX;
   const oz = REALM.originZ;
-  const tiles = listTiles();
+  const tiles = site.tiles();
   const cmdBlocks = new Map();
   let failures = 0;
 
@@ -297,7 +357,7 @@ function* buildJob(kind) {
         let n = 0;
         for (const op of opsFor(tile)) {
           try {
-            applyOp(dim, op, ox, oz, cmdId);
+            applyOp(dim, op, ox, oz, cmdId, site.inside);
           } catch (e) {
             if (failures++ < 5) console.warn(`[Agartha] op failed ${JSON.stringify(op)}: ${e}`);
           }
@@ -306,23 +366,24 @@ function* buildJob(kind) {
         }
         if (builderDebug) console.warn(`[Agartha debug] ${kind} tile ${t + 1}/${tiles.length}: load ${t1 - t0} ticks, ${n} ops in ${system.currentTick - t1} ticks`);
         done.add(t);
-        world.setDynamicProperty(key, JSON.stringify({ v: REALM.buildVersion, done: [...done] }));
+        world.setDynamicProperty(key, JSON.stringify({ v: site.version, done: [...done] }));
       }
     }
     removeTickingArea(dim);
     const missing = tiles.length - done.size;
     if (missing > 0) {
-      throw new Error(`${missing} sections could not be loaded. Run /scriptevent agartha:${kind} again to finish them (progress is saved).`);
+      const cmd = `agartha:${kind}${site.id === "hell" ? "_hell" : ""}`;
+      throw new Error(`${missing} sections could not be loaded. Run /scriptevent ${cmd} again to finish them (progress is saved).`);
     }
-    if (kind === "forge") world.setDynamicProperty(BUILT_KEY, REALM.buildVersion);
+    if (kind === "forge") world.setDynamicProperty(site.builtKey, site.version);
     world.setDynamicProperty(key, undefined);
     // A finished erase means the next forge starts fresh, and vice versa.
     world.setDynamicProperty(kind === "erase" ? PROGRESS_KEY : `${PROGRESS_KEY}_erase`, undefined);
-    if (failures) console.warn(`[Agartha] Realm built with ${failures} failed operations.`);
+    if (failures) console.warn(`[Agartha] ${site.name} built with ${failures} failed operations.`);
     finish("onReady");
   } catch (e) {
     removeTickingArea(dim);
-    console.error(`[Agartha] Realm build failed: ${e}`);
+    console.error(`[Agartha] ${site.name} build failed: ${e}`);
     finish("onError", String(e.message ?? e));
   }
 }
@@ -344,18 +405,20 @@ function finish(kind, arg) {
   }
 }
 
-function applyOp(dim, op, ox, oz, cmdId) {
+const SIGN_FACING = { north: 2, south: 3, west: 4, east: 5 };
+
+function applyOp(dim, op, ox, oz, cmdId, inside) {
   const kind = op[0];
   if (kind === "fill") {
     const [, x1, y1, z1, x2, y2, z2, id, mode, states] = op;
-    if (!isInsideRegion(x1, y1, z1) || !isInsideRegion(x2, y2, z2)) return;
+    if (!inside(x1, y1, z1) || !inside(x2, y2, z2)) return;
     const block = cmdId(id, states);
     if (!block) return;
     dim.runCommand(`fill ${ox + x1} ${y1} ${oz + z1} ${ox + x2} ${y2} ${oz + z2} ${block} ${mode ?? "replace"}`);
     return;
   }
   const [, x, y, z] = op;
-  if (!isInsideRegion(x, y, z)) return;
+  if (!inside(x, y, z)) return;
   const loc = { x: ox + x, y, z: oz + z };
   if (kind === "set") {
     const perm = permutationFor(op[4], op[5]);
@@ -364,5 +427,17 @@ function applyOp(dim, op, ox, oz, cmdId) {
     dim.runCommand(`loot insert ${loc.x} ${loc.y} ${loc.z} loot "${op[4]}"`);
   } else if (kind === "spawn") {
     dim.spawnEntity(op[4], { x: loc.x + 0.5, y: loc.y, z: loc.z + 0.5 });
+  } else if (kind === "sign") {
+    const block = dim.getBlock(loc);
+    const perm = permutationFor("minecraft:crimson_wall_sign", { facing_direction: SIGN_FACING[op[4]] ?? 2 }) ?? permutationFor("minecraft:wall_sign", { facing_direction: SIGN_FACING[op[4]] ?? 2 });
+    if (!block || !perm) return;
+    block.setPermutation(perm);
+    const sign = block.getComponent("minecraft:sign");
+    sign?.setText(op[5]);
+    try {
+      sign?.setWaxed(true);
+    } catch {
+      // older engines
+    }
   }
 }

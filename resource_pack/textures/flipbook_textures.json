@@ -4,5 +4,11 @@
     "atlas_tile": "agartha_portal",
     "ticks_per_frame": 3,
     "blend_frames": true
+  },
+  {
+    "flipbook_texture": "textures/blocks/agartha_hell_portal",
+    "atlas_tile": "agartha_hell_portal",
+    "ticks_per_frame": 4,
+    "blend_frames": true
   }
 ]

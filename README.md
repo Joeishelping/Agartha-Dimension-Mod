@@ -54,7 +54,7 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | **Greek wonders** | Two round temples (tholoi) with golden-banded domes; the temple becomes an **ice palace** with domed towers, more spires, a golden frieze, roof statues and blue-flamed braziers. |
 | **Norse wonders** | A ring of rune stones, and white statues of stags, a polar bear, a horse and swans standing on the frozen lake. |
 | **Mountains & sky** | A crown of needle-peaked mountains with white, ice-blue and stone strata and snow-dusted ledges. Cloud belts drift between the peaks. Beyond the edge, **snowy peaks rise out of an unbroken sea of clouds**, and towering cloud walls ring the realm, so the world below is never seen. |
-| **Sound** | An original soundscape made for Agartha that never goes quiet while you're there. Three continuous beds overlap so they never drop out: an original two-minute angelic choir (four-part "aah" choir with a soprano melody, celesta sparkles and a cathedral reverb) that loops seamlessly, a high mountain wind (louder on the peaks), and at night the aurora's glassy song. Layered gently on top: an occasional soft crystal chime or frost sparkle, spirit-choir swells, now and then a far-off horn from the mountain halls, and at night gusts of the north wind and a deep temple bell. There is also an angelic swell as you arrive, a harp when the All-Father blesses you, and a low hum around both portals. |
+| **Sound** | An original soundscape made for Agartha that never goes quiet while you're there. Three continuous beds overlap so they never drop out: an original two-minute angelic choir (four-part "aah" choir with a soprano melody, celesta sparkles and a cathedral reverb) that loops seamlessly, and a high mountain wind (louder on the peaks). Layered gently on top: an occasional soft crystal chime or frost sparkle, spirit-choir swells, now and then a far-off horn from the mountain halls, and at night gusts of the north wind and a deep temple bell. There is also an angelic swell as you arrive, a harp when the All-Father blesses you, and a low hum around both portals. |
 | **Atmosphere** | Always on, and it changes with time and place: snow keeps falling, spirit lights drift (more at night), golden motes rise, mist rolls past. The aurora blazes at night, god rays fall by day, and the wind grows louder on the peaks. Each landmark has its own touch: light rising through the Pole's halos, glowing lights under Yggdrasil, holy light over the temple, mist on the lake, a deep bell in the night. **Aurora**: permanent ribbons of coloured glass hang in the northern sky, and aurora particle curtains ripple overhead day and night. There's drifting mist, falling snow, golden light motes, glowing **spirit lights**, soft **god rays** descending from the sky, **spirit orbs** floating over the lake, and a haze that fades the horizon into white. No hostile mobs spawn. |
 
 | | |
@@ -67,6 +67,57 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 
 **Everything in Agartha can be broken**, including the clouds and the portal blocks (the exit mends itself). Loot: hoards in the vault, temple, rock-cut halls and pyramid chamber (gold, diamonds, enchanted books, the rare **Jarl's Frostbite Axe**). Longhouses hold food and **Horns of Honey Mead**.
 
+## Hell: the Anti-Hyperborea beneath
+Where Agartha is light, ice and ascent above the clouds, Hell is the floor of the world: dark, deep and **directly beneath Agartha**, carved out of a sealed shell of deepslate between Y -63 and Y 34. It draws on the Christian hell (Dante's warning over the gate, the frozen lake of the lowest circle, the mouth of Hell from old paintings) and the Egyptian **Duat** (the twelve Hours of the night, the weighing of the heart against the Feather of Ma'at, Ammit the Devourer, Apep the serpent of chaos, and the *ren*, the true name that holds power over its bearer).
+
+1. **Forge it** (in person, like Agartha): `/scriptevent agartha:forge_hell`. You're carried through the deep while it's carved, then returned and given the **Heart Scarab of the Duat**.
+2. **Open the Hellmouth**: use the Heart Scarab on the ground. A weeping, horned beast's head of blackstone rises, its jaws held open around the portal. It's the one way down. If it's sealed (every portal block broken), the Scarab returns.
+3. **Walk into its jaws.** Every soul arrives at the very bottom of the pit.
+
+### Layer 1: the Oubliette of Entropic Recurrence
+An 80-block pit of blackstone and deepslate, with weeping walls, caged gibbets on chains, bone and soul fire on the floor, and an obelisk on a heart of magma that warns *Abandon all hope, ye who enter here*. A crumbling slab spiral climbs the wall for nearly three turns past the **twelve Gates of the Hours**. Each Gate is an alcove with a pylon frame, an inscription and a button.
+
+- **The lava rises.** A few seconds after you arrive the floor begins to burn, and the lava climbs the shaft steadily. **The button at any Gate flushes it** back to the floor, but the noise wakes the damned: a wave comes for you.
+- **Spike traps** burst from some steps. Each trap covers only *some* of the path's three lanes and never the same ones twice, so the darker steps warn you and there is always a way past. They're lethal.
+- **Crumbling steps** give way under anyone who lingers, and grow back later. Some steps are simply missing: jump.
+- **Waves of the damned** come every so often: zombies and skeletons low down, then wither skeletons and vexes, then blazes near the top. More come the higher you are and the more times you've climbed.
+- **Climbing souls**, translucent and hollow-eyed, crawl up the spiral beside you, lose their grip and fall wailing back into the dark. Get close and they whisper.
+- **Dying anywhere in Hell sends you back to the very bottom** ("AGAIN, ascent N"). Hell remembers: how many times you've climbed, how you died ("You remember the burning."), and where ("You died here."). You can't dig or build your way out: nothing breaks except cracked bricks, and nothing you place stays. Lava that washes away a Gate's button or inscription is mended once it drains.
+- **The hidden way:** past the seventh Gate, stepping stones hang over the void. Climb them back the way you came, leap to a ledge, and break through the cracked bricks. A dark tunnel with pools of lava to jump winds down to the frozen lake below.
+
+### Layer 2: the Spire of Absolute Contract
+At the top, the Twelfth Gate opens on a road to a vast silent cavern. A black bridge with no rails descends over **Cocytus**, a frozen lake of black ice where the damned are frozen with only their skulls showing, and the coils of **Apep** arch out of the ice. In its centre stands **the Spire**: brutalist matte-black walls, tinted-glass windows, cold soul light.
+
+- **The Hall of Thrones**: forty-two empty thrones of the judges of the dead in two tiers, braziers of soul fire, the **Scale of Two Truths** (heart against feather) with **Ammit** crouched beside it, and the Devil's horned throne under a rose window. Walk up to the scale and **your heart is weighed**: light if you climbed without dying more than once, heavy otherwise.
+- **The Inverse Cathedral** hangs upside down from the roof of the cavern, its spire pointing down at the ice.
+- **The Clocktower of Reversion**: its hands turn **backwards**, ticking across the lake.
+- Silence: almost no sound but the clock, a low breath, and Agartha's heavenly choir played backwards an octave down. No monsters in Layer 2.
+
+### The Devil, Keeper of the Contract
+He doesn't fight. **Talk to him** and he remembers how many times you climbed and how your heart weighed. Ask who he is and what this place is. The only way out is a **Deal**:
+
+| Price | What happens |
+|---|---|
+| **Memory** | You lose every level of experience, and forget everything you learned in Hell. |
+| **Possession** | He takes whatever you hold in your hand. |
+| **Years** | You're released carrying his mark: weakness, slowness and hunger for ten minutes. |
+| **The Feather's Mercy** | Only if your heart was weighed light, and only once ever: go free. |
+| **The Wager** | Back to the bottom. Climb to him again **without dying once** and you go free for nothing. Die, and the wager is lost. |
+| **Refuse** | Climb again. |
+| **His true name** | Five glyphs hidden in Hell each teach one syllable of his name: on the pit floor, at a Gate, in the hidden tunnel, on the lake, in the clocktower. Speak the whole name and he must let you go, and gives back a life he took (a Totem of Undying). Speak the wrong one and the floor opens. |
+
+You're released back to where you entered the Hellmouth.
+
+| | |
+|---|---|
+| ![Hell in section: the pit (left) and the Spire over the frozen lake](docs/hell_section.png) | ![The frozen lake from above: Apep's coils, the Spire, the Clocktower](docs/hell_lake.png) |
+
+![The pit's wall unrolled: the spiral climbing past the Gates of the Hours](docs/hell_pit.png)
+
+*(Cutaway previews from `tools/preview_hell.mjs`, not in-game screenshots.)*
+
+**Changing the Devil's skin:** replace `resource_pack/textures/entity/devil.png` (128×128, laid out for his model; `tools/gen_hell_assets.py` makes the default).
+
 ## Operator commands
 | Command | Effect |
 |---|---|
@@ -77,19 +128,25 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | `/scriptevent agartha:music_length <seconds>` | For your own music: replace `resource_pack/sounds/agartha/ambience.ogg` with your track (OGG Vorbis, same name), then set its length so it loops on time, e.g. `/scriptevent agartha:music_length 60:00` for one hour (minutes:seconds or plain seconds). `0` goes back to the built-in 2-minute choir. Saved in the world. |
 | `/scriptevent agartha:gate_reset` | Forget the Gate's location, e.g. if it was destroyed by other means. |
 | `/scriptevent agartha:fx_test` | Plays Agartha's chime and arrival choir, and shows snow, lights, god rays, aurora and mist right where you stand (works anywhere) to check sound and effects are working. |
-| `/scriptevent agartha:status` | Check that everything works: whether Agartha is forged, where the Gate is, how many of its portal blocks are present, and whether the portal block is loaded. |
+| `/scriptevent agartha:status` | Check that everything works: whether Agartha and Hell are forged, where the Gate and the Hellmouth are, how many of their portal blocks are present, and whether the portal block is loaded. |
+| `/scriptevent agartha:forge_hell` | Forge Hell in person (or finish an interrupted forge). |
+| `/scriptevent agartha:rebuild_hell` | Carve Hell again from scratch (everyone must leave Hell first). |
+| `/scriptevent agartha:erase_hell` | **Delete Hell**: fills its place with solid rock (deepslate below Y 0, stone above). The Hellmouth in your world is left alone. |
+| `/scriptevent agartha:scarab` | Get the Heart Scarab again (only when no Hellmouth stands). |
+| `/scriptevent agartha:hellmouth_reset` | Forget the Hellmouth's location. |
+| `/scriptevent agartha:hell_release` | Release yourself from Hell (for operators). |
 
 ## Safety
-Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket of the Overworld sky centred on X 99,890 / Z 100,298. **Every block the forge writes is bounds-checked** against one reserved box (X 99,536 → 100,239, Z 99,936 → 100,639, Y 96 → 319), and world generation is never changed. `tools/test_blueprint.mjs` verifies all ~820,000 build operations stay inside. The only thing built outside that box is the Heavenly Gate, where *you* choose to raise it.
+Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket of the Overworld sky centred on X 99,890 / Z 100,298. **Every block the forge writes is bounds-checked** against one reserved box (X 99,536 → 100,239, Z 99,936 → 100,639, Y 96 → 319), and world generation is never changed. `tools/test_blueprint.mjs` verifies all ~820,000 build operations stay inside. Hell is carved inside a second reserved box deep beneath it (X 99,792 → 99,983, Z 100,256 → 100,447, Y -63 → 34), from a sealed shell of deepslate: everything natural inside that shell (stone, ores, caves) is replaced, and nothing outside it is touched. The only things built outside the two boxes are the Heavenly Gate and the Hellmouth, where *you* choose to raise them.
 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v1.8.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v1.8.0 (Behavior)** and **Agartha v1.8.0 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v2.0.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v2.0.0 (Behavior)** and **Agartha v2.0.0 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 
-In the creative inventory, all Agartha items (Keystone, Heavenly Gate portal block, Jarl's Axe, Mead Horn, Agartha Cloud) sit together in one collapsible **Agartha** group under *Items*.
+In the creative inventory, all Agartha items (Keystone, Heavenly Gate portal block, Jarl's Axe, Mead Horn, Agartha Cloud, Heart Scarab, Hellmouth portal block) sit together in one collapsible **Agartha** group under *Items*.
 
 ## Development
 | Command | Purpose |
@@ -100,5 +157,9 @@ In the creative inventory, all Agartha items (Keystone, Heavenly Gate portal blo
 | `python3 tools/gen_textures.py` | Regenerates textures, including the default All-Father skin. |
 | `python3 tools/gen_sounds.py` | Re-synthesizes the soundscape (needs numpy and ffmpeg). |
 | `python3 tools/gen_choir.py` | Re-synthesizes the two-minute choir loop (needs numpy and ffmpeg). |
+| `node tools/smoke_hell.mjs` | Walks a soul through Hell against the mock API: forging, the Hellmouth, lava, spikes, crumbling steps, buttons, waves, souls, glyphs, death and recurrence, the weighing, the clock, and every Deal. |
+| `node tools/preview_hell.mjs && python3 tools/ppm2png.py` | Renders cutaway sections and plans of Hell into `dist/preview/`. |
+| `python3 tools/gen_hell_assets.py` | Regenerates the Devil's model and skin, the souls' skin, the Hellmouth portal and the Scarab icon. |
+| `cd tools && python3 gen_hell_sounds.py` | Re-synthesizes Hell's sounds (needs numpy and ffmpeg). |
 
-The layout lives in `behavior_pack/scripts/terrain.js` (`LAYOUT`), the landmarks in `structures.js` and `citadel.js`, and location and heights in `config.js`. Bump `buildVersion` to rebuild existing worlds after changes.
+The layout lives in `behavior_pack/scripts/terrain.js` (`LAYOUT`), the landmarks in `structures.js` and `citadel.js`, and location and heights in `config.js`. Bump `buildVersion` to rebuild existing worlds after changes. Hell's geometry is in `hell_layout.js` (shared by the blueprint and the runtime), its blocks in `hell_blueprint.js`, its gameplay in `hell.js`, its sound and air in `hell_ambience.js`, and the Devil's dialogue in `devil.js`.

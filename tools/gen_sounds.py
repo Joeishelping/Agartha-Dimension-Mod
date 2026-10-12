@@ -142,18 +142,6 @@ def wind_bed(sec=30):
     return normalize(fade((body + whistle) * swell, 2.0, 2.0), 0.6)
 
 
-def aurora_bed(sec=30):
-    """The aurora's song: a high, slowly shifting glassy pad (night)."""
-    t = t_axis(sec)
-    out = np.zeros_like(t)
-    for f in [587.33, 739.99, 880.0, 1108.73, 1318.51]:
-        lfo = 0.5 + 0.5 * np.sin(2 * np.pi * rng.uniform(0.03, 0.09) * t + rng.uniform(0, 6))
-        out += np.sin(2 * np.pi * f * t + 0.6 * np.sin(2 * np.pi * 0.21 * t)) * lfo * 0.2
-        out += np.sin(2 * np.pi * f * 2.001 * t) * lfo * 0.04
-    out += band_noise(len(t), 3000, 9000) * 0.04
-    return normalize(fade(reverb(out, 3.0, 0.5), 2.0, 2.0), 0.5)
-
-
 def sparkle():
     """A tiny glittering twinkle, like frost catching the light."""
     t = t_axis(3)
@@ -233,7 +221,6 @@ if __name__ == "__main__":
     write_ogg("wind1", wind())
     write_ogg("wind2", wind(10))
     write_ogg("wind_bed", wind_bed())
-    write_ogg("aurora_bed", aurora_bed())
     for i in range(3):
         write_ogg(f"sparkle{i + 1}", sparkle())
     for i, chord in enumerate([[293.66, 369.99, 440.0, 587.33], [261.63, 329.63, 392.0, 523.25], [246.94, 311.13, 369.99, 493.88]]):

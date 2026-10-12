@@ -88,10 +88,55 @@ export function listTiles() {
   return tiles;
 }
 
+// ---------------------------------------------------------------------------
+// Hell: the underworld beneath Agartha, sealed deep underground.
+// ---------------------------------------------------------------------------
+
+export const HELL = {
+  // Directly beneath Agartha: heaven above, hell below.
+  originX: REALM.originX,
+  originZ: REALM.originZ,
+  // Everything Hell builds lies between these heights (bedrock is below).
+  minY: -63,
+  maxY: 34,
+  // The solid shell everything is carved from (relative x/z, inclusive).
+  shell: { minX: -64, maxX: 64, minZ: -24, maxZ: 148 },
+  buildVersion: 1,
+};
+
+// 3x3 tiles of 64x64 on the same chunk-aligned grid as Agartha.
+const HELL_TILES_I = [-1, 0, 1];
+const HELL_TILES_J = [0, 1, 2];
+export const HELL_REGION = {
+  minX: -96 + SHIFT_X, maxX: 95 + SHIFT_X,
+  minZ: -32 + SHIFT_Z, maxZ: 159 + SHIFT_Z,
+  minY: HELL.minY, maxY: HELL.maxY,
+};
+
+export function isInsideHell(rx, y, rz) {
+  const r = HELL_REGION;
+  return rx >= r.minX && rx <= r.maxX && rz >= r.minZ && rz <= r.maxZ && y >= r.minY && y <= r.maxY;
+}
+
+export function listHellTiles() {
+  const s = REALM.tileSize;
+  const tiles = [];
+  for (const j of HELL_TILES_J) {
+    for (const i of j % 2 ? [...HELL_TILES_I].reverse() : HELL_TILES_I) {
+      tiles.push({ i, j, minX: i * s - s / 2 + SHIFT_X, maxX: i * s + s / 2 - 1 + SHIFT_X, minZ: j * s - s / 2 + SHIFT_Z, maxZ: j * s + s / 2 - 1 + SHIFT_Z });
+    }
+  }
+  return tiles;
+}
+
 export const IDS = {
   axe: "agartha:jarl_axe",
   mead: "agartha:mead_horn",
   cloud: "agartha:cloud",
   keystone: "agartha:gate_keystone",
   portal: "agartha:portal",
+  hellPortal: "agartha:hell_portal",
+  scarab: "agartha:heart_scarab",
+  devil: "agartha:devil",
+  soul: "agartha:soul",
 };

@@ -1,13 +1,13 @@
 {
   "format_version": 2,
   "header": {
-    "name": "Agartha v1.10.2 (Behavior)",
+    "name": "Agartha v2.0.0 (Behavior)",
     "description": "pack.description",
     "uuid": "7ad58745-6d8c-4a05-a584-01b6546607fc",
     "version": [
-      1,
-      10,
-      2
+      2,
+      0,
+      0
     ],
     "min_engine_version": [
       1,
@@ -20,9 +20,9 @@
       "type": "data",
       "uuid": "af0f8346-2cd2-4558-b810-d64464cef2b8",
       "version": [
-        1,
-        10,
-        2
+        2,
+        0,
+        0
       ]
     },
     {
@@ -31,9 +31,9 @@
       "uuid": "4a70a24d-6abe-4f69-b6e7-a951b584e14f",
       "entry": "scripts/main.js",
       "version": [
-        1,
-        10,
-        2
+        2,
+        0,
+        0
       ]
     }
   ],
@@ -41,13 +41,17 @@
     {
       "uuid": "20c2b8e6-226d-447e-a336-e580e4ea5ad7",
       "version": [
-        1,
-        10,
-        2
+        2,
+        0,
+        0
       ]
     },
     {
       "module_name": "@minecraft/server",
+      "version": "2.0.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
       "version": "2.0.0"
     }
   ]

@@ -9,5 +9,8 @@
   },
   "agartha:portal": {
     "sound": "glass"
+  },
+  "agartha:hell_portal": {
+    "sound": "glass"
   }
 }

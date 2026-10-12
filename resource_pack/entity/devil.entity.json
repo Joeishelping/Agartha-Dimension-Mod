@@ -1,0 +1,30 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "agartha:devil",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/devil"
+      },
+      "geometry": {
+        "default": "geometry.agartha.devil"
+      },
+      "animations": {
+        "look_at_target": "animation.common.look_at_target",
+        "idle": "animation.agartha.devil.idle"
+      },
+      "scripts": {
+        "animate": [
+          "look_at_target",
+          "idle"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

@@ -9,6 +9,9 @@
     },
     "agartha_portal": {
       "textures": "textures/blocks/agartha_portal"
+    },
+    "agartha_hell_portal": {
+      "textures": "textures/blocks/agartha_hell_portal"
     }
   }
 }

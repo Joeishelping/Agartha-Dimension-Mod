@@ -7,14 +7,16 @@
 //   ["set",  x, y, z, blockId, states?]
 //   ["loot", x, y, z, lootTablePath]
 //   ["spawn", x, y, z, entityId]
+//   ["sign",  x, y, z, facing, text]
 
 import { REGION } from "./config.js";
 
 const MAX_FILL = 32768;
 
 export class Canvas {
-  constructor(tile) {
+  constructor(tile, region = REGION) {
     this.tile = tile;
+    this.region = region;
     this.ops = [];
   }
 
@@ -24,7 +26,7 @@ export class Canvas {
   }
 
   set(x, y, z, id, states) {
-    if (!this.has(x, z) || y < REGION.minY || y > REGION.maxY) return;
+    if (!this.has(x, z) || y < this.region.minY || y > this.region.maxY) return;
     this.ops.push(["set", x, y, z, id, states]);
   }
 
@@ -34,14 +36,19 @@ export class Canvas {
     const bx = Math.min(Math.max(x1, x2), t.maxX);
     const az = Math.max(Math.min(z1, z2), t.minZ);
     const bz = Math.min(Math.max(z1, z2), t.maxZ);
-    const ay = Math.max(Math.min(y1, y2), REGION.minY);
-    const by = Math.min(Math.max(y1, y2), REGION.maxY);
+    const ay = Math.max(Math.min(y1, y2), this.region.minY);
+    const by = Math.min(Math.max(y1, y2), this.region.maxY);
     if (ax > bx || az > bz || ay > by) return;
     const area = (bx - ax + 1) * (bz - az + 1);
     const step = Math.max(1, Math.floor(MAX_FILL / area));
     for (let y = ay; y <= by; y += step) {
       this.ops.push(["fill", ax, y, az, bx, Math.min(by, y + step - 1), bz, id, mode, states]);
     }
+  }
+
+  /** A wall sign with an inscription. facing: the direction the text faces. */
+  sign(x, y, z, facing, text) {
+    if (this.has(x, z) && y >= this.region.minY && y <= this.region.maxY) this.ops.push(["sign", x, y, z, facing, text]);
   }
 
   loot(x, y, z, table) {

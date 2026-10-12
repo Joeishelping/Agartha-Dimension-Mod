@@ -1,0 +1,31 @@
+{
+  "format_version": "1.21.40",
+  "minecraft:block": {
+    "description": {
+      "identifier": "agartha:hell_portal",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "agartha_hell_portal",
+          "render_method": "blend"
+        }
+      },
+      "minecraft:collision_box": false,
+      "minecraft:light_emission": 11,
+      "minecraft:light_dampening": 0,
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 3
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 30
+      },
+      "minecraft:map_color": "#5A0A0A",
+      "minecraft:display_name": "tile.agartha:hell_portal.name"
+    }
+  }
+}
