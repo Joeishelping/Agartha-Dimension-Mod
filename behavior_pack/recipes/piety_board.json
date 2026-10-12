@@ -1,0 +1,36 @@
+{
+  "format_version": "1.21.40",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "agartha:piety_board"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "PPP",
+      "PGP",
+      "PBP"
+    ],
+    "key": {
+      "P": {
+        "item": "minecraft:planks"
+      },
+      "G": {
+        "item": "minecraft:gold_ingot"
+      },
+      "B": {
+        "item": "minecraft:book"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:book"
+      }
+    ],
+    "result": {
+      "item": "agartha:piety_board",
+      "count": 1
+    }
+  }
+}

@@ -215,10 +215,14 @@ export function disCeil(x, z) {
 /** Centre line of the Phlegethon, the river of fire, at a given z. */
 export const riverX = (z) => DIS.x + 6 + 9 * Math.sin(z / 14);
 export const RIVER_HALF = 4;
-export const BRIDGES = [
-  { z: 14, crumbling: true, name: "the Bridge of Sighs" },
-  { z: 50, crumbling: false, name: "the Bridge of Teeth" },
-];
+export const BRIDGES = [{ z: 14, crumbling: true, name: "the Bridge of Sighs" }];
+// The Ferryman's crossing: a raft of bones over the river of fire, further south.
+export const FERRY = (() => {
+  const z = 50;
+  const cx = riverX(z + 0.5);
+  const xs = Math.floor(cx - RIVER_HALF), xe = Math.ceil(cx + RIVER_HALF) - 1;
+  return { z, y: -14, west: xs, east: xe - 2, dockW: xs - 1, dockE: xe + 1 }; // y: the raft's blocks (feet one above)
+})();
 /** The cells of a bridge over the Phlegethon (relative x/z; the deck is at DIS.floorY - 1). */
 export function bridgeCells(b) {
   const out = [];
@@ -240,8 +244,40 @@ export const KENNEL = { minX: 168, maxX: 198, minZ: 36, maxZ: 64, gateZ: 50 };
 export const DEN = { x: 189, z: 56, r: 6 };
 export const FALLEN_KING = { x: 132, z: 52, r: 7 };
 /** The Seals that bind the inner gate: altar positions (feet level = altar's y). */
+// The crypt under the Mausoleum: nine sealed tombs, one of them true.
+export const CRYPT = (() => {
+  const { x, z } = MAUSOLEUM;
+  const F = DIS.floorY;
+  const markers = [
+    ["minecraft:gilded_blackstone", "He was buried with his gold, and it did not save him."],
+    ["minecraft:skeleton_skull", "He wears his own face upon his grave."],
+    ["minecraft:bone_block", "Nothing is left of him but bone."],
+    ["minecraft:crying_obsidian", "His grave still weeps."],
+    ["minecraft:chain", "He was chained, even in death."],
+    ["minecraft:soul_lantern", "A cold light keeps watch over him."],
+    ["minecraft:magma", "He burns hotter than the rest."],
+    ["minecraft:iron_bars", "Even his grave is a cage."],
+    ["minecraft:redstone_block", "His heart was too heavy for the scale."],
+  ];
+  const tombs = [];
+  let i = 0;
+  for (const tz of [z - 5, z - 1, z + 3]) {
+    for (const tx of [x - 6, x - 3, x]) {
+      const [marker, riddle] = markers[i++];
+      tombs.push({ x: tx, z: tz, marker, riddle, button: { x: tx + 2, y: F - 6, z: tz + 1, facing: "east" } });
+    }
+  }
+  return {
+    minX: x - 7, maxX: x + 7, minZ: z - 7, maxZ: z + 9, floorY: F - 6,
+    stair: { x: x + 5, z: z - 4, steps: 7 },
+    sign: { x: x + 6, y: F - 4, z: z + 5, facing: "west" },
+    altar: { x: x - 2, z: z + 8 },
+    tombs,
+  };
+})();
+
 export const SEALS = [
-  { name: "the Seal of Ash", where: "in the Mausoleum among the tombs", x: MAUSOLEUM.x, y: DIS.floorY + 1, z: MAUSOLEUM.z },
+  { name: "the Seal of Ash", where: "in the crypt beneath the Mausoleum", x: CRYPT.altar.x, y: CRYPT.floorY, z: CRYPT.altar.z },
   { name: "the Seal of Wind", where: "atop the Tower of the Furies", x: Math.floor((FURY_TOWER.minX + FURY_TOWER.maxX) / 2), y: FURY_TOWER.topY + 1, z: Math.floor((FURY_TOWER.minZ + FURY_TOWER.maxZ) / 2) },
   { name: "the Seal of Teeth", where: "in the den of Garm", x: DEN.x, y: DIS.floorY, z: DEN.z },
 ];

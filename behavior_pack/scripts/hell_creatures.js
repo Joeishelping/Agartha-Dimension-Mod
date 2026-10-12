@@ -17,6 +17,8 @@ export const FURY = "agartha:fury";
 export const DAMNED = "agartha:damned";
 export const HOUND = "agartha:hellhound";
 export const WATCHER = "agartha:watcher";
+export const GAOLER = "agartha:gaoler";
+export const FERRYMAN = "agartha:ferryman";
 
 // Everything we spawn on purpose (so the "nothing spawns in Hell" rule lets it be).
 const ours = new Set();
@@ -230,6 +232,10 @@ world.afterEvents.entityHitEntity.subscribe(({ damagingEntity, hitEntity }) => {
   try {
     if (damagingEntity.typeId === HOUND) hitEntity.setOnFire(4, true);
     else if (damagingEntity.typeId === DAMNED) hitEntity.addEffect("slowness", 30, { amplifier: 1, showParticles: false });
+    else if (damagingEntity.typeId === GAOLER) {
+      hitEntity.addEffect("slowness", 60, { amplifier: 2, showParticles: false });
+      hitEntity.addEffect("nausea", 100, { showParticles: false });
+    }
   } catch {
     // gone
   }

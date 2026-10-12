@@ -95,6 +95,18 @@ const throatTops = new Map();
 wallStair(TH.minX + 1, TH.maxX - 1, TH.minZ + 1, TH.maxZ - 1, TH.topY, TH.bottomY, 2, (x, z, y) => throatTops.set(`${x},${z}`, [x, z, Math.max(y, throatTops.get(`${x},${z}`)?.[2] ?? -999)]), { startAt: [TH.maxX - 1, TH.doorZ], down: true });
 for (const [x, z, y] of throatTops.values()) room(x, y, z, `throat stair y=${y}`);
 for (let x = L.THROAT_TUNNEL.toX; x < L.THROAT_TUNNEL.fromX; x += 4) { room(x, L.CAVERN.lakeY, L.THROAT_TUNNEL.z, "tunnel to the lake"); floor(x, L.CAVERN.lakeY, L.THROAT_TUNNEL.z, "tunnel to the lake"); }
+// The crypt: its stair, its nine tombs (each with a button), the altar.
+const CR = L.CRYPT;
+for (let i = 0; i < CR.stair.steps; i++) room(CR.stair.x, L.DIS.floorY - i + 1, CR.stair.z + i, `crypt stair ${i}`);
+room(CR.stair.x, CR.floorY, CR.stair.z + CR.stair.steps, "crypt floor at the stair's foot");
+for (const t of CR.tombs) {
+  check(at(t.button.x, t.button.y, t.button.z).includes("button"), `tomb button at ${t.x},${t.z}`);
+  room(t.button.x, CR.floorY, t.button.z + 1, "beside a tomb");
+}
+check(at(CR.sign.x, CR.sign.y, CR.sign.z) === "minecraft:sign", "the crypt's riddle sign");
+// The ferry: raft on the west bank, docks both sides.
+for (let x = L.FERRY.west; x <= L.FERRY.west + 2; x++) check(at(x, L.FERRY.y, L.FERRY.z) === "minecraft:bone_block", "the raft of bones");
+for (const x of [L.FERRY.dockW, L.FERRY.dockE]) room(x, L.DIS.floorY - 0.5, L.FERRY.z, "a ferry dock");
 // The Tower of the Furies' stair.
 const FT = L.FURY_TOWER;
 const towerTops = new Map();

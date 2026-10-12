@@ -35,7 +35,8 @@ import {
   stepAngle, stepSurface, stepBlock, stepPerm, stepUnder, laneOf, stepKind, trapIndex, hourButton, pathCells, hellZone,
 } from "./hell_layout.js";
 import { spawnCreature, spawnFury, furyTick, watcherTick, clearCreatures, creatures, isOurs, DAMNED, HOUND, FURY } from "./hell_creatures.js";
-import { disTick, resetDis, sealBits } from "./hell_dis.js";
+import { disTick, resetDis, sealBits, disNeedsReset } from "./hell_dis.js";
+import { guideTick } from "./hell_guide.js";
 import { clockFace } from "./hell_blueprint.js";
 import { hellAmbience, forgetHellAmbience } from "./hell_ambience.js";
 import { openDevil } from "./devil.js";
@@ -283,6 +284,8 @@ world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
   player.setDynamicProperty(P.dead, undefined);
   const lostWager = !!player.getDynamicProperty(P.wager);
   player.setDynamicProperty(P.wager, undefined);
+  // Every death starts the ascent over: the pit is flushed of its fire.
+  drainLava(LAVA_START_DELAY, true);
   system.runTimeout(() => {
     if (!player.isValid) return;
     zoneOfPlayer.delete(player.id);
@@ -1155,6 +1158,7 @@ function hellTick() {
   const pit = [];
   const dis = [];
   const spire = [];
+  const seals = tick % 10 === 0 ? sealBits() : 0;
   for (const p of world.getAllPlayers()) {
     if (!p?.isValid) continue;
     if (!p.hasTag(HELL_TAG)) {
@@ -1174,6 +1178,7 @@ function hellTick() {
     (zone === "pit" ? pit : zone === "dis" ? dis : spire).push(p);
     if (zone === "pit") stepTick(tick, p);
     hellAmbience(p, tick, zone, lava.level);
+    guideTick(tick, p, zone, seals);
   }
   if (isBuilding(SITES.hell)) return;
   const mobs = pit.length ? hellMobs() : [];
@@ -1224,7 +1229,7 @@ function hellTick() {
   if (pit.length || dis.length || spire.length || world.getAllPlayers().some((p) => p.hasTag(HELL_TAG))) emptySince = null;
   else if (tick % 40 === 0) {
     emptySince ??= tick;
-    if (tick - emptySince > 20 * 30 && sealBits()) resetDis();
+    if (tick - emptySince > 20 * 30 && disNeedsReset()) resetDis();
   }
   if (hellDebug && tick % 400 === 0) {
     console.warn(`[Agartha debug] hell tick ${tick}: pit ${pit.length}, dis ${dis.length}, spire ${spire.length}, lava ${lava.level ?? "none"}, pit mobs ${mobs.length}, dis mobs ${creatures("dis").length}, souls ${souls.size}, seals ${sealBits()}, traps ${traps.map((t) => t.state[0]).join("")}`);

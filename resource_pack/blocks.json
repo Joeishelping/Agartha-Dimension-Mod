@@ -12,5 +12,8 @@
   },
   "agartha:hell_portal": {
     "sound": "glass"
+  },
+  "agartha:piety_board": {
+    "sound": "wood"
   }
 }

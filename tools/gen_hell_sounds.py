@@ -9,6 +9,9 @@
   hell_tick     the Clocktower of Reversion: a tick that swells in backwards
   hell_again    the stinger when a soul is sent back to the bottom
   devil_voice   the Keeper of the Contract's low murmur (3 variants)
+  ogre_roar     the Gaoler hears you running: a huge, chesty bellow
+  ogre_step     the Gaoler's footfall: a thud you feel more than hear (2 variants)
+  ogre_grunt    the Gaoler breathing, grumbling (2 variants)
 
 Requires numpy and ffmpeg (with libvorbis). Run: python3 tools/gen_hell_sounds.py
 """
@@ -278,7 +281,49 @@ def dis_bed(sec=60):
     return normalize(fade(loopable(out, 2.0), 2.0, 2.0), 0.7)
 
 
+ogre_rng = np.random.default_rng(66)
+
+
+def ogre_roar(sec=2.6):
+    """A bellow from a chest the size of a barrel: low voice, growl, distortion."""
+    t = t_axis(sec)
+    f = 70 + 40 * np.sin(np.pi * np.clip(t / sec, 0, 1)) ** 0.6
+    f = f * (1 + 0.04 * np.sin(2 * np.pi * 6.5 * t))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    tone = sum(a * np.sin(h * ph + ogre_rng.uniform(0, 6)) for h, a in [(1, 1), (2, 0.9), (3, 0.8), (4, 0.6), (5, 0.5), (6, 0.35), (8, 0.2)])
+    rasp = band_noise(len(t), 200, 1400) * (0.5 + 0.5 * np.abs(np.sin(2 * np.pi * 31 * t)))
+    env = np.clip(t / 0.25, 0, 1) * np.clip((sec - t) / 0.9, 0, 1)
+    out = np.tanh((tone + rasp * 0.8) * env * 2.2)
+    return normalize(reverb(lowpass(out, 0.3), 2.5, 0.5), 0.9)
+
+
+def ogre_step():
+    """A heavy footfall: a sub thump and a crunch of grit."""
+    t = t_axis(0.7)
+    thump = np.sin(2 * np.pi * (48 - 20 * t) * t) * np.exp(-t / 0.12)
+    crunch = band_noise(len(t), 300, 3000) * np.exp(-t / 0.04) * ogre_rng.uniform(0.25, 0.4)
+    return normalize(reverb(thump + crunch, 1.0, 0.3), 0.9)
+
+
+def ogre_grunt(sec):
+    t = t_axis(sec)
+    f = ogre_rng.uniform(60, 80) * (1 - 0.2 * t / sec)
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    tone = sum(a * np.sin(h * ph) for h, a in [(1, 1), (2, 0.8), (3, 0.6), (4, 0.4), (6, 0.2)])
+    env = np.sin(np.pi * np.clip(t / sec, 0, 1)) ** 1.5
+    out = np.tanh((tone + band_noise(len(t), 150, 900) * 0.6) * env * 1.6)
+    return normalize(lowpass(out, 0.2), 0.75)
+
+
 if __name__ == "__main__":
+    import sys
+    if "--ogre" in sys.argv:
+        write_ogg("ogre_roar", ogre_roar())
+        for i in range(2):
+            write_ogg(f"ogre_step{i + 1}", ogre_step())
+        for i, sec in enumerate([1.2, 1.6]):
+            write_ogg(f"ogre_grunt{i + 1}", ogre_grunt(sec))
+        sys.exit(0)
     write_ogg("hell_drone", hell_drone())
     write_ogg("abyss_bed", abyss_bed())
     for i, sec in enumerate([4.5, 5.5, 4.0]):
@@ -304,3 +349,8 @@ if __name__ == "__main__":
         write_ogg(f"fury_shriek{i + 1}", fury_shriek(sec))
     write_ogg("dread", dread())
     write_ogg("dis_bed", dis_bed())
+    write_ogg("ogre_roar", ogre_roar())
+    for i in range(2):
+        write_ogg(f"ogre_step{i + 1}", ogre_step())
+    for i, sec in enumerate([1.2, 1.6]):
+        write_ogg(f"ogre_grunt{i + 1}", ogre_grunt(sec))

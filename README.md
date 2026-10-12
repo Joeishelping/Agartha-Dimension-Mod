@@ -86,21 +86,23 @@ A pit 80 blocks deep and 31 across, of blackstone and deepslate, with weeping wa
 - **Crumbling steps** give way under anyone who lingers, and grow back later. Some steps are simply missing: jump.
 - **The souls are not your friends.** Sixteen translucent, hollow-eyed souls crawl up the spiral beside you. Get too close and one **seizes you and tries to throw you off the stair** into the void, then falls away wailing. They whisper, too.
 - **Waves of the damned**: the **Damned** (charred walkers that claw and slow you) and **hellhounds** (fast; they leap, and their bite sets you alight), with champions higher up. In the upper Hours, **Furies** come down out of the dark.
-- **Dying anywhere in Hell sends you back to the very bottom** ("AGAIN, ascent N"). Hell remembers how many times you've climbed, how you died ("You remember the burning.") and where ("You died here."). You can't dig or build your way out: nothing breaks except cracked bricks, and nothing you place stays.
+- **Dying anywhere in Hell sends you back to the very bottom** ("AGAIN, ascent N"), and **the lava resets**: the pit is flushed and the fire starts again from the floor. Hell remembers how many times you've climbed, how you died ("You remember the burning.") and where ("You died here."). You can't dig or build your way out: nothing breaks except cracked bricks, and nothing you place stays.
 - **The hidden way:** halfway up, stepping stones hang over the void. Climb them back the way you came, leap to a ledge in the east wall, and break through the cracked bricks. A dark tunnel with lava to jump runs straight into the City of Dis, past its outer wall.
 
 ### Layer II: the City of Dis
 At the top, the Twelfth Gate opens on **the Road of Ashes**, lined with bones, down to the west gate of **Dis**: Dante's burning city, behind red-hot iron walls with twelve towers, in a cavern 160 blocks across. The river of fire, the **Phlegethon**, winds through it.
 
 - **The Field of Tombs**: the burning graves of the heretics, lids thrown aside, among ruins and the half-buried crowned head of **a fallen king**.
-- **Three Seals bind the inner Gate of Dis.** Stand at a Seal's altar and hold your ground for six seconds to break it, while its guardians come for you:
-  - **The Seal of Ash**, in the Mausoleum among the tombs. The tombs burst open.
-  - **The Seal of Wind**, atop the **Tower of the Furies**. The Furies come home.
-  - **The Seal of Teeth**, in the den of **Garm**, the giant hound of Hel, in the Kennel across the river. Garm wakes, and the pack with him.
+- **Lost? Crouch.** A trail of cold wisps always drifts ahead of you toward your next goal (up the spiral, along the road, to the nearest unbroken Seal, through the Gate, down the Throat, across the ice, up to the Keeper). Crouch and the dead tell you what to seek, how far, and which way. Signs at the west gate name the three Seals and where they lie.
+- **Three Seals bind the inner Gate of Dis**, and each is won its own way:
+  - **The Seal of Ash: the crypt of nine tombs**, down the stair inside the Mausoleum. Each tomb bears a different mark (gold, a skull, bone, crying obsidian, a chain, a lantern, magma, iron bars, a heart of redstone), and a riddle on the sign tells you which dead man holds the Seal, e.g. *"His grave still weeps."* Press the button of the true tomb. Press a wrong one and its dead climb out and you catch fire. The riddle changes each time Hell empties.
+  - **The Seal of Wind: the race up the Tower of the Furies.** Start up the stair inside and the tower fills with lava from below. The steps just above the fire crumble away, and Furies dive at you on the way up. Touch the Seal at the top before the fire reaches you. Fail, and the tower drains and its stair is rebuilt for another try.
+  - **The Seal of Teeth: Garm, the Hound of Hel.** Walk into his kennel across the river and he wakes: a boss with a health bar. He growls, crouches and **charges** like a falling wall; he **howls** and his pups come; below half his health he **breathes fire**. Kill him and the Seal breaks.
   Each broken Seal shatters a lock on the Gate. Break all three and the Gate opens.
-- **The Bridge of Sighs** crumbles into the river behind whoever runs across it (it rises again later). **The Bridge of Teeth** is lined with skulls.
+- **Crossing the river of fire:** run the **Bridge of Sighs**, which crumbles into the river behind you (it rises again later), or take **the Ferryman's raft of bones** further south. Stand on the raft and he poles you across, but **hellhounds wait on the far bank**. If he's on the other side, stand on the empty dock and he comes for you.
+- **The Gaoler**, a horned, tusked, pot-bellied devil-ogre with a spiked club, walks the streets. **He cannot be hurt, and he only hears you when you sprint.** Run, and he roars and comes for you (a blow takes seven hearts and leaves you reeling). Walk, and after a few seconds he loses you. You'll hear his footsteps.
 - The Damned and the hounds roam the streets; **Furies** circle overhead, shriek, and dive through walls at you (kill them as they come). The river spits geysers of fire. Now and then **dread** falls on the city: darkness, and something comes from behind. And sometimes, far off, **the Watcher** stands and looks at you. Stare too long, or come too near, and it is gone.
-- The Seals stay broken while anyone is in Hell. When everyone has left, they mend and the Gate shuts.
+- The Seals stay broken while anyone is in Hell. When everyone has left, they mend, the tombs close and the Gate shuts.
 
 ### Layer III: the Spire of Absolute Contract
 Beyond the Gate, **the Throat**, a square shaft, spirals down to a tunnel and the shore of a vast silent cavern. Here lies **Cocytus**, a frozen lake of black ice where the damned are frozen with only their skulls showing, and the coils of **Apep** arch out of the ice. In its centre stands **the Spire**: brutalist matte-black walls, tinted-glass windows, cold soul light. Enter at its base and climb the stair inside.
@@ -136,7 +138,14 @@ You're released back to where you entered the Hellmouth.
 
 ![A hellhound, a Fury, one of the Damned](docs/hell_creatures.png)
 
+![The Gaoler](docs/hell_gaoler.png)
+
 *(Cutaway previews from `tools/preview_hell.mjs`, not in-game screenshots.)*
+
+## The Piety Board and the afterlife
+Craft a **Piety Board** (planks around a gold ingot, with a book under it; it's also in the creative inventory), place it, and use it. Or use `/scriptevent agartha:piety` anywhere. Set **your own piety** from 0 (wicked) to 100 (saintly), and choose whether you want to face the afterlife.
+
+If you do, then whenever you die out in the world (not in Agartha or Hell), you're asked as you respawn: **go to the afterlife, or respawn normally**. With **piety 50 or more you rise to Agartha**; below 50 you go **down to Hell**, to the bottom of the pit. (Agartha or Hell must have been forged.)
 
 **Changing the Devil's skin:** replace `resource_pack/textures/entity/devil.png` (128×128, laid out for his model; `tools/gen_hell_assets.py` makes the default).
 
@@ -157,6 +166,7 @@ You're released back to where you entered the Hellmouth.
 | `/scriptevent agartha:scarab` | Get the Heart Scarab again (only when no Hellmouth stands). |
 | `/scriptevent agartha:hellmouth_reset` | Forget the Hellmouth's location. |
 | `/scriptevent agartha:hell_release` | Release yourself from Hell (for operators). |
+| `/scriptevent agartha:piety` | Open the Piety Board (anyone can use this). |
 
 ## Safety
 Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket of the Overworld sky centred on X 99,890 / Z 100,298. **Every block the forge writes is bounds-checked** against one reserved box (X 99,536 → 100,239, Z 99,936 → 100,639, Y 96 → 319), and world generation is never changed. `tools/test_blueprint.mjs` verifies all ~820,000 build operations stay inside. Hell is carved inside a second reserved box deep beneath it (X 99,856 → 100,175, Z 100,192 → 100,447, Y -63 → 34), from a sealed shell of deepslate: everything natural inside that shell (stone, ores, caves) is replaced, and nothing outside it is touched. The only things built outside the two boxes are the Heavenly Gate and the Hellmouth, where *you* choose to raise them.
@@ -164,11 +174,11 @@ Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v2.1.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v2.1.0 (Behavior)** and **Agartha v2.1.0 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v2.2.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v2.2.0 (Behavior)** and **Agartha v2.2.0 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 
-In the creative inventory, all Agartha items (Keystone, Heavenly Gate portal block, Jarl's Axe, Mead Horn, Agartha Cloud, Heart Scarab, Hellmouth portal block) sit together in one collapsible **Agartha** group under *Items*.
+In the creative inventory, all Agartha items (Keystone, Heavenly Gate portal block, Jarl's Axe, Mead Horn, Agartha Cloud, Heart Scarab, Hellmouth portal block, Piety Board) sit together in one collapsible **Agartha** group under *Items*.
 
 ## Development
 | Command | Purpose |
@@ -179,7 +189,7 @@ In the creative inventory, all Agartha items (Keystone, Heavenly Gate portal blo
 | `python3 tools/gen_textures.py` | Regenerates textures, including the default All-Father skin. |
 | `python3 tools/gen_sounds.py` | Re-synthesizes the soundscape (needs numpy and ffmpeg). |
 | `python3 tools/gen_choir.py` | Re-synthesizes the two-minute choir loop (needs numpy and ffmpeg). |
-| `node tools/smoke_hell.mjs` | Walks a soul through Hell against the mock API: forging, the Hellmouth, lava, spikes, arrow slits, fire vents, grasping souls, crumbling steps, buttons, waves, glyphs, death and recurrence; the City of Dis (its hunters, a Fury's dive, all three Seals and their guardians, the Gate opening, the Bridge of Sighs falling); the weighing, the clock, and every Deal. |
+| `node tools/smoke_hell.mjs` | Walks a soul through Hell against the mock API: forging, the Hellmouth, lava, spikes, arrow slits, fire vents, grasping souls, crumbling steps, buttons, waves, glyphs, death and recurrence; the lava resetting on death; the City of Dis (its hunters, a Fury's dive, the crypt riddle, the tower race, Garm's charge and fire, the Gate opening, the Bridge of Sighs falling, the Ferryman, the Gaoler hearing you run, the guide); the Piety Board and the afterlife choice; the weighing, the clock, and every Deal. |
 | `node tools/test_hell.mjs` | Checks every Hell operation stays inside its box, and that every walkway (the spiral, the roads, the bridges, every stair) has room to stand. |
 | `node tools/preview_hell.mjs && python3 tools/ppm2png.py` | Renders cutaway sections and plans of Hell into `dist/preview/`. |
 | `python3 tools/gen_hell_assets.py` | Regenerates the Devil's model and skin (also worn by the Furies and the Watcher), the hellhound's model, the skins of the souls and the Damned, the Hellmouth portal and the Scarab icon. |

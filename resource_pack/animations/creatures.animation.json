@@ -132,6 +132,115 @@
           ]
         }
       }
+    },
+    "animation.agartha.gaoler.walk": {
+      "loop": true,
+      "bones": {
+        "legR": {
+          "rotation": [
+            "math.cos(query.anim_time * 300) * 30 * math.min(1, query.modified_move_speed * 4)",
+            0,
+            0
+          ]
+        },
+        "legL": {
+          "rotation": [
+            "-math.cos(query.anim_time * 300) * 30 * math.min(1, query.modified_move_speed * 4)",
+            0,
+            0
+          ]
+        },
+        "rightArm": {
+          "rotation": [
+            "-math.cos(query.anim_time * 300) * 30 * math.min(1, query.modified_move_speed * 4) * 0.6",
+            0,
+            0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "math.cos(query.anim_time * 300) * 30 * math.min(1, query.modified_move_speed * 4) * 0.6",
+            0,
+            "-4"
+          ]
+        },
+        "body": {
+          "position": [
+            0,
+            "math.abs(math.sin(query.anim_time * 300)) * 1.2 * math.min(1, query.modified_move_speed * 4)",
+            0
+          ],
+          "rotation": [
+            0,
+            "math.sin(query.anim_time * 300) * 4 * math.min(1, query.modified_move_speed * 4)",
+            0
+          ]
+        }
+      }
+    },
+    "animation.agartha.gaoler.breathe": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "scale": [
+            "1 + math.sin(query.life_time * 90) * 0.015",
+            1,
+            "1 + math.sin(query.life_time * 90) * 0.02"
+          ]
+        },
+        "head": {
+          "rotation": [
+            "math.sin(query.life_time * 45) * 3",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.agartha.gaoler.attack": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-math.sin(variable.attack_time * 180) * 110",
+            0,
+            "math.sin(variable.attack_time * 180) * 20"
+          ]
+        }
+      }
+    },
+    "animation.agartha.ferryman.pole": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-60 + math.sin(query.life_time * 60) * 25",
+            0,
+            "10"
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-70 + math.sin(query.life_time * 60) * 25",
+            0,
+            "-10"
+          ]
+        },
+        "body": {
+          "rotation": [
+            "8 + math.sin(query.life_time * 60) * 4",
+            0,
+            0
+          ]
+        },
+        "head": {
+          "rotation": [
+            "20",
+            0,
+            0
+          ]
+        }
+      }
     }
   }
 }

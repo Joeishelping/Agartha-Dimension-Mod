@@ -12,6 +12,9 @@
     },
     "agartha_hell_portal": {
       "textures": "textures/blocks/agartha_hell_portal"
+    },
+    "agartha_piety_board": {
+      "textures": "textures/blocks/agartha_piety_board"
     }
   }
 }

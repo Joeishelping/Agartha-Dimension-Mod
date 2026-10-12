@@ -35,6 +35,18 @@
           "hurt": "agartha.fury_shriek",
           "death": "agartha.fury_shriek"
         }
+      },
+      "agartha:gaoler": {
+        "volume": 1.0,
+        "pitch": [
+          0.8,
+          1.0
+        ],
+        "events": {
+          "ambient": "agartha.ogre_grunt",
+          "hurt": "agartha.ogre_grunt",
+          "death": "agartha.ogre_roar"
+        }
       }
     }
   }

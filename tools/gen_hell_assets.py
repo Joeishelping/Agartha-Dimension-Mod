@@ -349,12 +349,201 @@ def hellhound():
     save(img, RP / "textures/entity/hellhound.png")
 
 
+def build_model(ident, bones_spec, pal, W, H, out, decorate=None, bounds=(3, 2.5, 0.75)):
+    """Box-UV packs a model, paints it with `pal`, writes geo + texture."""
+    cubes = []
+    for bone, _, _, parts, _ in bones_spec:
+        for i, (part, origin, size) in enumerate(parts):
+            w, h, d = (math.ceil(s) for s in size)
+            cubes.append(((bone, i), 2 * (w + d), d + h))
+    cubes.sort(key=lambda c: -c[2])
+    uv, x, y, shelf = {}, 0, 0, 0
+    for key, cw, ch in cubes:
+        if x + cw > W:
+            x, y, shelf = 0, y + shelf, 0
+        uv[key] = (x, y)
+        x += cw
+        shelf = max(shelf, ch)
+    assert y + shelf <= H, f"{ident} sheet overflow"
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    global PAL
+    PAL = pal
+    bones = []
+    for bone, parent, pivot, parts, rot in bones_spec:
+        b = {"name": bone, "pivot": pivot}
+        if parent:
+            b["parent"] = parent
+        if rot:
+            b["rotation"] = rot
+        cs = []
+        for i, (part, origin, size) in enumerate(parts):
+            u, v = uv[(bone, i)]
+            cs.append({"origin": origin, "size": size, "uv": [u, v]})
+            sz = [math.ceil(s) for s in size]
+            paint(img, part, u, v, sz)
+            if decorate:
+                decorate(img, part, u, v, sz)
+        if cs:
+            b["cubes"] = cs
+        bones.append(b)
+    geo = {"format_version": "1.12.0", "minecraft:geometry": [{"description": {"identifier": ident, "texture_width": W, "texture_height": H, "visible_bounds_width": bounds[0], "visible_bounds_height": bounds[1], "visible_bounds_offset": [0, bounds[2], 0]}, "bones": bones}]}
+    path = RP / f"models/entity/{out}.geo.json"
+    path.write_text(json.dumps(geo, indent=2) + "\n")
+    print("wrote", path.relative_to(ROOT))
+    save(img, RP / f"textures/entity/{out}.png")
+
+
+# The Gaoler: a devilish ogre, horned and tusked, pot-bellied, long-armed,
+# dragging a spiked club. About three and a half blocks tall; faces -z.
+GAOLER_BONES = [
+    ("root", None, [0, 0, 0], [], None),
+    ("legR", "root", [-5, 18, 0], [("leg", [-9, 0, -3.5], [7, 18, 7]), ("foot", [-9.5, 0, -6], [8, 3, 3])], None),
+    ("legL", "root", [5, 18, 0], [("leg", [2, 0, -3.5], [7, 18, 7]), ("foot", [1.5, 0, -6], [8, 3, 3])], None),
+    ("body", "root", [0, 18, 0], [
+        ("hips", [-9, 16, -5], [18, 8, 10]),
+        ("loin", [-7, 8, -6], [14, 9, 1]),
+        ("belly", [-10, 22, -8], [20, 14, 13]),
+        ("chest", [-11, 34, -5], [22, 10, 11]),
+        ("hump", [-7, 43, -1], [14, 4, 8]),
+    ], None),
+    ("head", "body", [0, 44, -3], [
+        ("ogrehead", [-5, 43, -12], [10, 10, 9]),
+        ("brow", [-5.5, 50, -12.5], [11, 2, 3]),
+        ("jaw", [-5.5, 40, -13], [11, 4, 8]),
+        ("tusk", [-5, 43, -14], [1.5, 4, 1.5]),
+        ("tusk", [3.5, 43, -14], [1.5, 4, 1.5]),
+        ("horn1", [-9, 50, -8], [4, 3, 3]), ("horn2", [-11, 52, -7.5], [3, 4, 2.5]), ("horn3", [-12, 56, -7], [2, 3, 2]), ("horn4", [-11.5, 59, -6.75], [1.5, 2, 1.5]),
+        ("horn1", [5, 50, -8], [4, 3, 3]), ("horn2", [8, 52, -7.5], [3, 4, 2.5]), ("horn3", [10, 56, -7], [2, 3, 2]), ("horn4", [10, 59, -6.75], [1.5, 2, 1.5]),
+    ], None),
+    ("rightArm", "body", [-13, 41, 0], [("shoulder", [-17, 37, -4.5], [7, 7, 9]), ("ogrearm", [-16.5, 14, -3], [5, 24, 6]), ("fist", [-17, 9, -3.5], [6, 5, 7])], None),
+    ("club", "rightArm", [-14, 11, 0], [("handle", [-15.5, 10, -16], [3, 3, 14]), ("clubhead", [-17, 8.5, -25], [6, 6, 9]), ("spike", [-18.5, 10.5, -23], [9, 2, 2]), ("spike", [-15, 7, -23], [2, 9, 2])], None),
+    ("leftArm", "body", [13, 41, 0], [("shoulder", [10, 37, -4.5], [7, 7, 9]), ("ogrearm", [11.5, 14, -3], [5, 24, 6]), ("fist", [11, 9, -3.5], [6, 5, 7]), ("shackle", [11, 18, -3.5], [6, 2, 7])], None),
+]
+GAOLER_PAL = {
+    "leg": ((70, 18, 14), (110, 30, 22)), "foot": ((30, 14, 12), (50, 22, 18)),
+    "hips": ((40, 22, 16), (60, 34, 24)), "loin": ((24, 16, 12), (44, 28, 20)),
+    "belly": ((120, 40, 30), (160, 66, 48)), "chest": ((90, 24, 18), (130, 40, 30)), "hump": ((70, 18, 14), (100, 28, 22)),
+    "ogrehead": ((90, 22, 18), (130, 40, 30)), "brow": ((60, 14, 12), (80, 20, 16)), "jaw": ((80, 20, 16), (120, 36, 28)),
+    "tusk": ((210, 200, 170), (240, 232, 210)),
+    "horn1": ((30, 26, 24), (60, 50, 44)), "horn2": ((50, 44, 38), (80, 70, 60)), "horn3": ((80, 70, 56), (120, 100, 76)), "horn4": ((160, 120, 50), (210, 160, 70)),
+    "shoulder": ((80, 22, 16), (120, 36, 28)), "ogrearm": ((80, 20, 16), (120, 36, 28)), "fist": ((60, 16, 12), (90, 26, 20)),
+    "handle": ((40, 28, 18), (66, 46, 30)), "clubhead": ((44, 40, 40), (80, 74, 72)), "spike": ((150, 150, 150), (200, 200, 200)),
+    "shackle": ((60, 60, 64), (110, 110, 116)),
+}
+
+
+def _gaoler_details(img, part, u, v, size):
+    w, h, d = size
+    fx, fy = u + d, v + d
+    if part == "ogrehead":
+        # Small burning eyes under the brow, a snarl, a scar.
+        for ex in (2, 7):
+            img.putpixel((fx + ex, fy + 3), (255, 200, 40, 255))
+            img.putpixel((fx + ex - 1 if ex > 5 else fx + ex + 1, fy + 3), (255, 120, 20, 255))
+        for k in range(5):
+            img.putpixel((fx + 1 + k, fy + 1 + k // 2), (40, 8, 8, 255))
+        img.putpixel((fx + 4, fy + 5), (30, 8, 8, 255))
+        img.putpixel((fx + 5, fy + 5), (30, 8, 8, 255))
+    elif part == "jaw":
+        for k in range(1, w - 1, 2):
+            img.putpixel((fx + k, fy), (220, 210, 180, 255))
+        for k in range(w):
+            img.putpixel((fx + k, fy + 1), (40, 6, 6, 255))
+    elif part == "belly":
+        # A navel, stretch scars, and a brand.
+        img.putpixel((fx + w // 2, fy + h // 2 + 2), (50, 12, 10, 255))
+        for k in range(4):
+            img.putpixel((fx + 3 + k, fy + 3 + k), (180, 90, 60, 255))
+            img.putpixel((fx + w - 4 - k, fy + 4 + k), (180, 90, 60, 255))
+        for k in range(3):
+            img.putpixel((fx + w // 2 - 1 + k, fy + 2), (255, 120, 20, 255))
+    elif part == "chest":
+        for k in range(0, w, 3):  # a chain across the chest
+            img.putpixel((fx + k, fy + (k // 3) % h), (130, 130, 136, 255))
+    elif part == "loin":
+        for y in range(h):
+            if y % 3 == 0:
+                img.putpixel((fx + w // 2, fy + y), (120, 20, 20, 255))
+    elif part == "clubhead":
+        for k in range(0, w * h, 5):
+            img.putpixel((fx + k % w, fy + (k // w) % h), (90, 20, 14, 255))  # old blood
+
+
+def gaoler():
+    build_model("geometry.agartha.gaoler", GAOLER_BONES, GAOLER_PAL, 128, 128, "gaoler", _gaoler_details, bounds=(4, 4.5, 1.8))
+
+
+def ferryman():
+    """The Ferryman: a tall, hooded figure in rags, faceless but for two coals."""
+    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    for x0, y0, w, h in [(0, 0, 32, 16), (16, 16, 24, 16), (40, 16, 16, 16), (0, 16, 16, 16), (32, 48, 16, 16), (16, 48, 16, 16)]:
+        for x in range(w):
+            for y in range(h):
+                v = rnd.randint(0, 10)
+                img.putpixel((x0 + x, y0 + y), (14 + v, 12 + v, 16 + v, 255))
+    # The face is a void; two coals for eyes, deep in the hood.
+    for x in range(8, 16):
+        for y in range(8, 16):
+            img.putpixel((x, y), (2, 2, 3, 255))
+    for (x, y) in [(10, 12), (13, 12)]:
+        img.putpixel((x, y), (255, 110, 20, 255))
+    # The hood and the robe (overlay layers), frayed.
+    for x0, y0, w, h in [(32, 0, 32, 16), (16, 32, 24, 16), (40, 32, 16, 16), (48, 48, 16, 16), (0, 32, 16, 16), (0, 48, 16, 16)]:
+        for x in range(w):
+            for y in range(h):
+                if (x0, y0) == (32, 0) and 40 <= x0 + x < 48 and 8 <= y0 + y < 16 and 1 <= x < 15:
+                    continue  # leave the face of the hood open
+                if y0 >= 32 and rnd.random() < y / h * 0.35:
+                    continue
+                v = rnd.randint(0, 12)
+                img.putpixel((x0 + x, y0 + y), (30 + v, 26 + v, 34 + v, 255))
+    save(img, RP / "textures/entity/ferryman.png")
+
+
+def piety_board():
+    """The Piety Board: a dark oak frame, a parchment, and the scale of souls,
+    one pan of light (Agartha) and one of fire (Hell)."""
+    r = random.Random(7)
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 255))
+    for x in range(16):
+        for y in range(16):
+            frame = x in (0, 15) or y in (0, 15)
+            if frame:
+                v = r.randint(0, 12)
+                img.putpixel((x, y), (58 + v, 38 + v // 2, 22, 255))
+            else:
+                v = r.randint(0, 14)
+                img.putpixel((x, y), (214 + v // 2, 196 + v // 2, 150 + v, 255))
+    gold, dark = (200, 150, 40, 255), (90, 60, 20, 255)
+    for y in range(3, 13):
+        img.putpixel((7, y), dark)
+        img.putpixel((8, y), gold)
+    for x in range(3, 13):
+        img.putpixel((x, 4), gold)
+    for x in range(6, 10):
+        img.putpixel((x, 13), dark)
+    # The two pans.
+    for x in range(2, 6):
+        img.putpixel((x, 8), (150, 220, 255, 255))
+        img.putpixel((x, 7), (230, 245, 255, 255))
+    for x in range(10, 14):
+        img.putpixel((x, 8), (180, 30, 20, 255))
+        img.putpixel((x, 7), (255, 120, 20, 255))
+    for k in range(3):
+        img.putpixel((3 + k // 2, 5 + k), dark)
+        img.putpixel((12 - k // 2, 5 + k), dark)
+    return img
+
+
 if __name__ == "__main__":
     devil()
     devil(FURY, "fury", write_geo=False)
     devil(WATCHER, "watcher", write_geo=False)
     damned()
     hellhound()
+    gaoler()
+    ferryman()
     soul()
     save(hell_portal(), RP / "textures/blocks/agartha_hell_portal.png")
     save(heart_scarab(), RP / "textures/items/heart_scarab.png")
+    save(piety_board(), RP / "textures/blocks/agartha_piety_board.png")

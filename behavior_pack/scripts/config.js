@@ -102,7 +102,7 @@ export const HELL = {
   maxY: 34,
   // The solid shell everything is carved from (relative x/z, inclusive).
   shell: HELL_SHELL,
-  buildVersion: 3,
+  buildVersion: 4,
 };
 
 // 5x4 tiles of 64x64 on the same chunk-aligned grid as Agartha.

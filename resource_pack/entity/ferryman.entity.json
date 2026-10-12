@@ -1,0 +1,28 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "agartha:ferryman",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/ferryman"
+      },
+      "geometry": {
+        "default": "geometry.agartha.allfather"
+      },
+      "animations": {
+        "pole": "animation.agartha.ferryman.pole"
+      },
+      "scripts": {
+        "animate": [
+          "pole"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

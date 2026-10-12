@@ -34,6 +34,7 @@ import { ambientTick, forgetPlayer, setAmbienceDebug, ambienceReport, setMusicLe
 import { allFatherTick, talk, welcomeArrival, setAllFatherDebug } from "./allfather.js";
 import { readJson, liftForger, restoreForger } from "./forger.js";
 import { hellStatusLines, setHellDebug } from "./hell.js";
+import { setAgarthaEntrance } from "./piety.js";
 
 const TAG = "agartha_in_realm";
 const RETURN_KEY = "agartha:return";
@@ -302,6 +303,16 @@ function teleportIn(player, from) {
   }, 5);
   system.runTimeout(() => welcome(player), 50);
 }
+
+// The pious dead rise here (see piety.js).
+setAgarthaEntrance(
+  (player) => {
+    if (!isRealmBuilt()) return false;
+    teleportIn(player);
+    return true;
+  },
+  (entity) => entity.hasTag(TAG) || inRealmVolume(entity),
+);
 
 /** The All-Father stands before Heaven's Gate; make sure he is there. */
 function allFather() {

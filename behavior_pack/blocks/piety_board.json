@@ -1,0 +1,29 @@
+{
+  "format_version": "1.21.40",
+  "minecraft:block": {
+    "description": {
+      "identifier": "agartha:piety_board",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "agartha_piety_board",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:light_emission": 4,
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.5
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 6
+      },
+      "minecraft:map_color": "#C8A060",
+      "minecraft:display_name": "tile.agartha:piety_board.name"
+    }
+  }
+}

@@ -13,6 +13,7 @@ const { HELL } = await import("./mock/scripts/config.js");
 const L = await import("./mock/scripts/hell_layout.js");
 const OX = HELL.originX, OZ = HELL.originZ;
 const abs = (x, y, z) => ({ x: OX + x, y, z: OZ + z });
+const rel = (l) => ({ x: l.x - OX, y: l.y, z: l.z - OZ });
 
 let fails = 0;
 const expect = (c, m) => { console.log(c ? "ok  " : "FAIL", m); if (!c) fails++; };
@@ -68,12 +69,12 @@ expect(titles(p).some((x) => x.includes("Oubliette")), "the Oubliette greets the
 expect(p.log.some((e) => e[0] === "cmd" && e[1].includes("agartha:hell_fog")), "the pit is wrapped in its fog");
 
 // --- The pit: lava, spikes, crumbling, buttons, waves, souls ----------------
-const lavaFills = () => mc.cmds.filter((c) => c.includes(" lava replace air")).length;
+const lavaFills = () => mc.cmds.filter((c) => c.includes("lava replace air")).length;
 ticks(20 * 8);
 expect(lavaFills() === 0, "the lava waits a moment before it rises");
 ticks(20 * 8);
 expect(lavaFills() > 0, `then the floor begins to burn (${lavaFills()} lava fills)`);
-const lv = () => Math.max(...mc.cmds.filter((c) => c.includes(" lava replace air")).map((c) => +c.split(" ")[2]));
+const lv = () => Math.max(...mc.cmds.filter((c) => c.includes("lava replace air")).map((c) => +c.split(" ")[2]));
 const lv1 = lv();
 ticks(20 * 10);
 expect(lv() > lv1, `the lava keeps rising (Y ${lv1} -> ${lv()})`);
@@ -153,6 +154,7 @@ expect(kinds.has("agartha:damned") || kinds.has("agartha:hellhound"), `the waves
 
 // --- Death, and the loop ----------------------------------------------------
 p.location = abs(5, -30, 5);
+const cmdsBeforeDeath = mc.cmds.length;
 fire("entityDie", { deadEntity: p, damageSource: { cause: "lava" } });
 p.location = { x: 0, y: 70, z: 0 }; // the respawn point, far away
 fire("playerSpawn", { player: p, initialSpawn: false });
@@ -160,6 +162,7 @@ ticks(20);
 expect(inHell(p) && p.location.y === L.PIT.floorY, "dying in Hell sends you back to the very bottom");
 expect(prop(p, "loops") === 1 && titles(p).some((x) => x.includes("AGAIN")), "and Hell counts the ascents: AGAIN");
 expect(msgs(p).some((m) => m.includes("burning")), "you remember how you died");
+expect(mc.cmds.slice(cmdsBeforeDeath).some((c) => c.includes("air replace lava") && Number(c.split(" ")[2]) > L.PIT.floorY + 70), "and the pit is flushed of its lava, top to bottom");
 ticks(20 * 6);
 expect(inHell(p), "the soul stays in Hell after respawning");
 stand(p, 5.5, -30, 5.5);
@@ -187,15 +190,66 @@ const gate = L.innerGateCells();
 const gateShut = () => gate.filter((g) => g.kind === "bars").every((g) => (placed.get(`${OX + g.x},${g.y},${OZ + g.z}`) ?? "shut") !== "minecraft:air");
 expect(gateShut(), "the Gate of Dis is shut");
 const { sealBits } = await import("./mock/scripts/hell_dis.js");
-L.SEALS.forEach((s, i) => {
-  const before = mc.entities.length;
-  stand(p, s.x + 1.5, s.y, s.z + 0.5);
-  ticks(20 * 7);
-  expect((sealBits() & (1 << i)) !== 0, `${s.name} breaks after holding your ground`);
-  expect(mc.entities.length > before, `...and its guardians come (${mc.entities.slice(before).map((e) => e.typeId.replace("agartha:", "")).join(", ")})`);
-});
+const F = D.floorY;
+const at = (x, y, z) => placed.get(`${OX + x},${y},${OZ + z}`);
+// The crypt of nine tombs: one riddle, one true grave.
+const C = L.CRYPT;
+stand(p, L.MAUSOLEUM.x + 0.5, F, L.MAUSOLEUM.z + 0.5);
+ticks(42);
+const crypt = JSON.parse(world.getDynamicProperty("agartha:dis_crypt"));
+expect(C.tombs.every((t) => at(t.button.x, t.button.y, t.button.z) === "minecraft:polished_blackstone_button"), "the nine tombs are closed, each with a button");
+expect((placed.get(`${OX + C.sign.x},${C.sign.y},${OZ + C.sign.z}:text`) ?? "").includes(L.CRYPT.tombs[crypt.answer].riddle.split(" ")[0]), "the riddle of the true grave is written on the sign");
+stand(p, C.minX + 4.5, C.floorY, C.minZ + 6.5);
+ticks(4);
+expect(msgs(p).some((m) => m.includes(C.tombs[crypt.answer].riddle)), "entering the crypt, you hear the riddle");
+const press = (i) => fire("buttonPush", { block: { location: abs(C.tombs[i].button.x, C.tombs[i].button.y, C.tombs[i].button.z) }, source: p });
+const wrong = (crypt.answer + 1) % 9;
+let n0 = mc.entities.length;
+p.log.length = 0;
+press(wrong);
+ticks(2);
+expect(mc.entities.slice(n0).filter((e) => e.typeId === "agartha:damned").length === 3 && p.log.some((e) => e[0] === "fire"), "the wrong tomb: its dead rise, and you burn");
+expect(at(C.tombs[wrong].button.x, C.tombs[wrong].button.y, C.tombs[wrong].button.z) === "minecraft:air" && (sealBits() & 1) === 0, "...it stays open, and the Seal holds");
+press(crypt.answer);
+ticks(2);
+expect((sealBits() & 1) !== 0, "the true tomb breaks the Seal of Ash");
+
+// The race up the Tower of the Furies.
+const T = L.FURY_TOWER;
+stand(p, T.minX + 1.5, F + 6, T.minZ + 1.5);
+ticks(4);
+expect(world.getDynamicProperty("agartha:dis_tower") === true && titles(p).some((x) => x.includes("Climb")), "climbing the tower starts the race: Climb.");
+const lavaCmds = () => mc.cmds.filter((c) => c.includes("lava replace air") && c.startsWith(`fill ${OX + T.minX + 1} `));
+ticks(50 + 10 * 6);
+expect(lavaCmds().length >= 5, `the fire rises up the tower (${lavaCmds().length} layers)`);
+expect(mc.cmds.some((c) => c.includes("minecraft:magma replace air")), "a false floor keeps the lava from pouring out of the door");
+const s1 = L.SEALS[1];
+stand(p, s1.x + 0.5, s1.y, s1.z + 0.5);
+ticks(4);
+expect((sealBits() & 2) !== 0, "touching the top in time breaks the Seal of Wind");
+ticks(80);
+expect(world.getDynamicProperty("agartha:dis_tower") === undefined && mc.cmds.some((c) => c.includes("air replace lava") && c.startsWith(`fill ${OX + T.minX + 1} `)), "then the tower drains and its stair is rebuilt");
+
+// Garm.
+stand(p, L.KENNEL.minX + 4.5, F, L.KENNEL.gateZ + 0.5);
+ticks(4);
+const garm = mc.entities.find((e) => e.isValid && e.hasTag("agartha_garm"));
+expect(!!garm && garm.events.includes("agartha:as_garm") && garm.nameTag.includes("Garm"), "entering the kennel wakes Garm, the Hound of Hel");
+garm.location = abs(L.KENNEL.minX + 14.5, F, L.KENNEL.gateZ + 0.5);
+for (let i = 0; i < 200 && !garm.impulse; i++) ticks(2);
+expect(!!garm.impulse, "Garm charges");
+garm.hp = 0.4;
+p.log.length = 0;
+garm.location = abs(L.KENNEL.minX + 9.5, F, L.KENNEL.gateZ + 0.5);
+for (let i = 0; i < 200 && !p.log.some((e) => e[0] === "fire"); i++) ticks(2);
+expect(p.log.some((e) => e[0] === "fire"), "below half his blood, Garm breathes fire");
+expect((sealBits() & 4) === 0, "the Seal of Teeth holds while Garm lives");
+fire("entityDie", { deadEntity: garm });
+garm.isValid = false;
+ticks(4);
+expect((sealBits() & 4) !== 0, "killing Garm breaks the Seal of Teeth");
+ticks(42);
 expect(!gateShut(), "with all three Seals broken, the Gate of Dis opens");
-expect(mc.entities.some((e) => e.events.includes("agartha:as_garm")), "Garm, the great hound, guarded the Seal of Teeth");
 // The Bridge of Sighs falls behind you.
 const sighs = L.BRIDGES.find((b) => b.crumbling);
 const bc = L.bridgeCells(sighs);
@@ -205,6 +259,42 @@ expect(bc.filter((c) => !c.edge).every((c) => placed.get(`${OX + c.x},${D.floorY
 stand(p, D.x - 40, D.floorY, D.z + 0.5);
 ticks(20 * 30);
 expect(bc.filter((c) => !c.edge).every((c) => placed.get(`${OX + c.x},${D.floorY - 1},${OZ + c.z}`) !== "minecraft:air"), "and it rises again later");
+
+// The Ferryman.
+const R = L.FERRY;
+stand(p, R.west + 1.5, R.y + 1, R.z + 0.5);
+ticks(2);
+expect(at(R.west, R.y, R.z) === "minecraft:bone_block", "the raft of bones waits at the west dock");
+const hounds0 = mc.entities.filter((e) => e.typeId === "agartha:hellhound").length;
+ticks(24);
+ticks(20 * 6);
+expect(at(R.east + 2, R.y, R.z) === "minecraft:bone_block" && at(R.west, R.y, R.z) === "minecraft:air", "standing on it, the Ferryman poles you across the fire");
+expect(rel(p.location).x > R.east, "...and you go with it");
+expect(mc.entities.filter((e) => e.typeId === "agartha:hellhound").length > hounds0, "hounds wait on the far bank");
+expect(mc.entities.some((e) => e.isValid && e.typeId === "agartha:ferryman"), "the Ferryman rides his raft");
+
+// The Gaoler only hears you run.
+stand(p, D.x - 30.5, F, D.z + 0.5);
+for (let i = 0; i < 20 * 25 && !mc.entities.some((e) => e.isValid && e.typeId === "agartha:gaoler"); i++) ticks(2);
+const gaoler = mc.entities.find((e) => e.isValid && e.typeId === "agartha:gaoler");
+expect(!!gaoler, "the Gaoler walks the city");
+gaoler.location = abs(D.x - 20.5, F, D.z + 0.5);
+ticks(4);
+expect(!gaoler.events.includes("agartha:hunt"), "walking, he does not notice you");
+p.isSprinting = true;
+ticks(4);
+expect(gaoler.events.includes("agartha:hunt"), "running, he hears you and comes");
+p.isSprinting = false;
+ticks(20 * 6);
+expect(gaoler.events.includes("agartha:calm"), "stop running, and he loses you");
+
+// Crouch, and the dead show the way.
+p.isSneaking = true;
+p.log.length = 0;
+stand(p, D.x - 30.5, F, D.z + 0.5);
+ticks(12);
+expect(p.log.some((e) => e[0] === "bar" && /blocks/.test(e[1])), `crouching shows the way (${(p.log.find((e) => e[0] === "bar") ?? [])[1]})`);
+p.isSneaking = false;
 
 // --- Layer III -----------------------------------------------------------------
 // Walk into the Hall of Thrones.
@@ -310,6 +400,34 @@ expect(mc.entities.filter((e) => e.isValid && (e.hasTag?.("agartha_hell_mob") ||
 enterAgain();
 fire("system.scriptEventReceive", { id: "agartha:hell_release", message: "", sourceEntity: p });
 expect(!inHell(p), "an operator can release themselves");
+
+// --- The Piety Board, and the afterlife ------------------------------------------
+const q = makePlayer();
+q.location = { x: 500, y: 70, z: 500 };
+ui.__answers.length = 0;
+ui.__answers.push([20, true]);
+fire("before.playerInteractWithBlock", { player: q, block: { typeId: "agartha:piety_board", location: { x: 500, y: 70, z: 501 } }, cancel: false });
+await settle(4);
+expect(q.getDynamicProperty("agartha:piety") === 20 && q.getDynamicProperty("agartha:afterlife") === true, "the Piety Board sets your piety (20) and your wish to face the afterlife");
+fire("entityDie", { deadEntity: q, damageSource: { cause: "fall" } });
+fire("playerSpawn", { player: q, initialSpawn: false });
+ui.__answers.push("afterlife");
+ticks(22);
+await settle(6);
+expect(ui.__shown.some((f) => f.title?.includes("died") && f.buttons[0].includes("Hell")), "dying in the world, the impious are offered Hell");
+expect(inHell(q), "...and choosing the afterlife sends them down");
+const q2 = makePlayer();
+q2.location = { x: 600, y: 70, z: 600 };
+ui.__answers.push([80, true]);
+fire("system.scriptEventReceive", { id: "agartha:piety", message: "", sourceEntity: q2 });
+await settle(4);
+expect(q2.getDynamicProperty("agartha:piety") === 80, "/scriptevent agartha:piety opens the board too");
+fire("entityDie", { deadEntity: q2, damageSource: { cause: "fall" } });
+fire("playerSpawn", { player: q2, initialSpawn: false });
+ui.__answers.push("Respawn normally");
+ticks(22);
+await settle(6);
+expect(ui.__shown.some((f) => f.title?.includes("died") && f.buttons[0].includes("Agartha")) && !inHell(q2) && !q2.hasTag("agartha_in_realm"), "the pious are offered Agartha, and may simply respawn instead");
 
 if (fails) {
   console.error(`${fails} check(s) failed`);

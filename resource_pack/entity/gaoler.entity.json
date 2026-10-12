@@ -1,0 +1,36 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "agartha:gaoler",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/gaoler"
+      },
+      "geometry": {
+        "default": "geometry.agartha.gaoler"
+      },
+      "animations": {
+        "look_at_target": "animation.common.look_at_target",
+        "walk": "animation.agartha.gaoler.walk",
+        "attack": "animation.agartha.gaoler.attack",
+        "breathe": "animation.agartha.gaoler.breathe"
+      },
+      "scripts": {
+        "animate": [
+          "look_at_target",
+          "walk",
+          "breathe",
+          {
+            "attack": "variable.attack_time > 0"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

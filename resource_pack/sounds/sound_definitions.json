@@ -425,6 +425,52 @@
           "is3D": false
         }
       ]
+    },
+    "agartha.ogre_roar": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/agartha/ogre_roar",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ],
+      "min_distance": 4.0,
+      "max_distance": 64.0
+    },
+    "agartha.ogre_step": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/agartha/ogre_step1",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/agartha/ogre_step2",
+          "volume": 0.9,
+          "load_on_low_memory": true
+        }
+      ],
+      "min_distance": 4.0,
+      "max_distance": 40.0
+    },
+    "agartha.ogre_grunt": {
+      "category": "hostile",
+      "sounds": [
+        {
+          "name": "sounds/agartha/ogre_grunt1",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/agartha/ogre_grunt2",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        }
+      ],
+      "min_distance": 4.0,
+      "max_distance": 24.0
     }
   }
 }

@@ -12,7 +12,7 @@ import {
   STONES, CRACK_LEDGE, HIDDEN_TUNNEL, HIDDEN_PROFILE, ASCENT_PROFILE, CAVERN, cavernCeil,
   SPIRE, SCALE, CLOCKTOWER, CLOCK, CATHEDRAL, SERPENT, SERPENT_HEAD, GLYPHS, ARRIVAL,
   DIS, disCeil, riverX, RIVER_HALF, BRIDGES, DIS_WEST_GATE, DIS_INNER_GATE, innerGateCells, MAUSOLEUM, FURY_TOWER,
-  KENNEL, DEN, FALLEN_KING, SEALS, THROAT, THROAT_ROAD, THROAT_TUNNEL, bridgeCells,
+  KENNEL, DEN, FALLEN_KING, SEALS, THROAT, THROAT_ROAD, THROAT_TUNNEL, bridgeCells, CRYPT, FERRY,
 } from "./hell_layout.js";
 
 const DEEP = "minecraft:deepslate";
@@ -319,7 +319,8 @@ function street(x, z) {
   if (Math.abs(x - 118) <= 1 && z >= MAUSOLEUM.z + MAUSOLEUM.half && z <= DIS_INNER_GATE.z) return true;
   if (Math.abs(z - BRIDGES[0].z) <= 1 && x > rx && x <= FURY_TOWER.minX) return true;
   if (Math.abs(x - (FURY_TOWER.minX - 1)) <= 1 && z >= FURY_TOWER.maxZ && z <= BRIDGES[0].z) return true;
-  if (Math.abs(z - BRIDGES[1].z) <= 1 && x > rx && x <= KENNEL.minX) return true;
+  if (Math.abs(z - FERRY.z) <= 1 && x > FERRY.dockE && x <= KENNEL.minX) return true;
+  if (Math.abs(z - FERRY.z) <= 1 && x < FERRY.dockW && x >= 118) return true;
   return false;
 }
 
@@ -375,6 +376,8 @@ function dis(c) {
     }
   }
   mausoleum(c);
+  ferry(c);
+  guideSigns(c);
   furyTower(c);
   kennel(c);
   fallenKing(c);
@@ -500,20 +503,108 @@ function mausoleum(c) {
     }
   }
   for (let k = 0; k <= half; k++) c.fill(mx - half + k, F + 7 + k, mz - half + k, mx + half - k, F + 7 + k, mz + half - k, k === half ? GILDED : MATTE);
+  for (const [dx, dz] of [[-4, -4], [-4, 4], [0, -4]]) {
+    for (let i = -1; i <= 1; i++) {
+      c.set(mx + dx + i, F, mz + dz, "minecraft:netherrack");
+      c.set(mx + dx + i, F + 1, mz + dz, "minecraft:fire");
+    }
+  }
+  crypt(c);
+}
+
+/** The crypt beneath the Mausoleum: nine sealed tombs and the hidden Seal of Ash. */
+export function cryptTomb(c, t, open) {
+  const y = CRYPT.floorY;
+  c.fill(t.x, y, t.z, t.x + 1, y, t.z + 2, open ? "minecraft:soul_sand" : PB);
+  if (open) c.fill(t.x, y + 1, t.z, t.x + 1, y + 1, t.z + 2, "minecraft:air");
+  else c.fill(t.x, y + 1, t.z, t.x + 1, y + 1, t.z + 2, "minecraft:polished_blackstone_slab", { "minecraft:vertical_half": "bottom" });
+  c.set(t.x, y, t.z - 1, PBB);
+  const hanging = t.marker === "minecraft:soul_lantern";
+  c.set(t.x, y + 1, t.z - 1, t.marker, t.marker === "minecraft:skeleton_skull" ? { facing_direction: 1 } : t.marker === "minecraft:bone_block" || t.marker === "minecraft:chain" ? { pillar_axis: "y" } : hanging ? { hanging: false } : undefined);
+  if (!open) c.set(t.button.x, t.button.y, t.button.z, "minecraft:polished_blackstone_button", { facing_direction: 5 });
+  else c.set(t.button.x, t.button.y, t.button.z, "minecraft:air");
+}
+
+function crypt(c) {
+  const C = CRYPT;
+  const F = DIS.floorY;
+  const y = C.floorY;
+  c.fill(C.minX - 1, y - 2, C.minZ - 1, C.maxX + 1, F - 1, C.maxZ + 1, TILES);
+  c.fill(C.minX, y, C.minZ, C.maxX, F - 2, C.maxZ, "minecraft:air");
+  c.fill(C.minX, y - 1, C.minZ, C.maxX, y - 1, C.maxZ, "minecraft:soul_soil");
+  // The stair down from the Mausoleum floor.
+  for (let i = 0; i < C.stair.steps; i++) {
+    for (let w = 0; w < 2; w++) {
+      const x = C.stair.x + w, z = C.stair.z + i;
+      c.fill(x, F - i + 1, z, x, F - i + 3, z, "minecraft:air");
+      c.set(x, F - i, z, ...stairs("minecraft:polished_blackstone_stairs", "north"));
+      c.fill(x, y - 1, z, x, F - i - 1, z, TILES);
+    }
+  }
+  for (const t of C.tombs) cryptTomb(c, t, false);
+  // The altar of the Seal, at the far end, between braziers of cold fire.
   const s = SEALS[0];
   c.set(s.x, s.y - 1, s.z, CHISELED);
   c.set(s.x, s.y, s.z, "minecraft:crying_obsidian");
-  c.fill(s.x, s.y + 1, s.z, s.x, F + 6, s.z, CHAIN[0], CHAIN[1]);
-  for (const [dx, dz] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) {
-    c.set(s.x + dx, F, s.z + dz, "minecraft:soul_soil");
-    c.set(s.x + dx, F + 1, s.z + dz, "minecraft:soul_fire");
+  for (const dx of [-2, 2]) {
+    c.set(s.x + dx, s.y - 1, s.z, "minecraft:soul_soil");
+    c.set(s.x + dx, s.y, s.z, "minecraft:soul_fire");
   }
-  for (const [dx, dz] of [[-4, -4], [4, -4], [-4, 4], [4, 4]]) {
-    for (let i = -1; i <= 1; i++) {
-      c.set(s.x + dx + i, F, s.z + dz, "minecraft:netherrack");
-      c.set(s.x + dx + i, F + 1, s.z + dz, "minecraft:fire");
+  for (const [x, z] of [[C.minX + 1, C.minZ + 1], [C.maxX - 3, C.minZ + 1], [C.minX + 1, C.maxZ - 1]]) c.set(x, F - 3, z, "minecraft:soul_lantern", { hanging: true });
+  // The riddle (the runtime writes the current one).
+  c.set(C.sign.x + 1, C.sign.y, C.sign.z, TILES);
+  c.sign(C.sign.x, C.sign.y, C.sign.z, C.sign.facing, "§8One of us\n§8is the true one.\n§7Read the\n§7riddle...");
+}
+
+/** The Ferryman's docks, and his raft of bones waiting on the west bank. */
+function ferry(c) {
+  const F = DIS.floorY;
+  const R = FERRY;
+  for (let z = R.z - 1; z <= R.z + 1; z++) {
+    for (const x of [R.dockW, R.dockE]) c.set(x, F - 1, z, "minecraft:polished_blackstone_brick_slab", { "minecraft:vertical_half": "bottom" });
+    for (let x = R.west; x <= R.west + 2; x++) c.set(x, R.y, z, "minecraft:bone_block", { pillar_axis: "x" });
+  }
+  for (const x of [R.dockW - 1, R.dockE + 1]) {
+    for (const z of [R.z - 2, R.z + 2]) {
+      c.fill(x, F, z, x, F + 1, z, "minecraft:polished_blackstone_wall");
+      c.set(x, F + 2, z, "minecraft:soul_lantern", { hanging: false });
     }
   }
+}
+
+/** Signs that tell the lost which way to go. */
+function guideSigns(c) {
+  const F = DIS.floorY;
+  const sign = (x, y, z, facing, text) => {
+    const back = { east: [-1, 0], west: [1, 0], south: [0, -1], north: [0, 1] }[facing];
+    c.fill(x + back[0], y - 1, z + back[1], x + back[0], y + 1, z + back[1], PBB);
+    c.sign(x, y, z, facing, text);
+  };
+  const g = DIS_WEST_GATE;
+  sign(g.x + 6, F + 1, g.z - 3, "west", "§4THE CITY OF DIS\n§7Break three Seals\n§7to open its\n§7inner Gate.");
+  sign(g.x + 6, F + 1, g.z + 3, "west", "§6Ash: §7crypt, NW\n§6Wind: §7tower, NE\n§6Teeth: §7Garm, SE\n§8Gate: south-west");
+  sign(THROAT_TUNNEL.toX + 4, CAVERN.lakeY + 1, THROAT_TUNNEL.z + 1, "east", "§8The Spire:\n§7follow the\n§7lanterns across\n§7the ice.");
+  sign(4, CAVERN.lakeY + 2, SPIRE.minZ + 3, "south", "§8The Keeper\n§8waits above.\n§7Climb.");
+}
+
+/** The stair round the inside of the Tower of the Furies (the runtime rebuilds it after the race). */
+export function towerStair(c) {
+  const F = DIS.floorY;
+  const T = FURY_TOWER;
+  const stair = (f) => wallStair(T.minX + 1, T.maxX - 1, T.minZ + 1, T.maxZ - 1, F + 0.5, T.topY + 1.01, 2, f);
+  stair((x, z, y) => {
+    const fy = Math.floor(y);
+    if (y % 1) c.set(x, fy, z, "minecraft:polished_blackstone_brick_slab", { "minecraft:vertical_half": "bottom" });
+    else c.set(x, fy - 1, z, PBB);
+  });
+  // Clear headroom where the stair comes up through the top.
+  stair((x, z, y) => {
+    if (Math.ceil(y) + 2 < T.topY) return;
+    c.fill(x, Math.ceil(y), z, x, Math.min(T.topY + 3, Math.ceil(y) + 2), z, "minecraft:air");
+    const fy = Math.floor(y);
+    if (y % 1) c.set(x, fy, z, "minecraft:polished_blackstone_brick_slab", { "minecraft:vertical_half": "bottom" });
+    else c.set(x, fy - 1, z, PBB);
+  });
 }
 
 /** The Tower of the Furies: the Seal of Wind at its top, among their nests. */
@@ -538,20 +629,7 @@ function furyTower(c) {
     }
   });
   c.fill(T.minX, F, cz - 1, T.minX, F + 3, cz + 1, "minecraft:air");
-  const stair = (f) => wallStair(T.minX + 1, T.maxX - 1, T.minZ + 1, T.maxZ - 1, F + 0.5, T.topY + 1.01, 2, f);
-  stair((x, z, y) => {
-    const fy = Math.floor(y);
-    if (y % 1) c.set(x, fy, z, "minecraft:polished_blackstone_brick_slab", { "minecraft:vertical_half": "bottom" });
-    else c.set(x, fy - 1, z, PBB);
-  });
-  // Clear headroom where the stair comes up through the top.
-  stair((x, z, y) => {
-    if (Math.ceil(y) + 2 < T.topY) return;
-    c.fill(x, Math.ceil(y), z, x, Math.min(T.topY + 3, Math.ceil(y) + 2), z, "minecraft:air");
-    const fy = Math.floor(y);
-    if (y % 1) c.set(x, fy, z, "minecraft:polished_blackstone_brick_slab", { "minecraft:vertical_half": "bottom" });
-    else c.set(x, fy - 1, z, PBB);
-  });
+  towerStair(c);
   // Nests of bone and black feathers, and the Seal.
   for (const [x, z] of [[T.minX + 2, T.minZ + 2], [T.maxX - 2, T.maxZ - 2], [T.minX + 2, T.maxZ - 2]]) {
     c.set(x, T.topY + 1, z, "minecraft:black_wool");
