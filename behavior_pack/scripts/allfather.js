@@ -58,10 +58,10 @@ function face(af, loc) {
   }
 }
 
-function anim(af, name, sound) {
+function anim(af, name, sound, volume = 1) {
   try {
     af.playAnimation(`animation.agartha.allfather.${name}`, { blendOutTime: 0.4 });
-    if (sound) af.dimension.playSound(sound, af.location);
+    if (sound) af.dimension.playSound(sound, af.location, { volume });
   } catch {
     // cosmetic
   }
@@ -137,10 +137,10 @@ export function allFatherTick(af, players, tick, night) {
   }
   if (tick % (20 * 15) !== 0 || !players.length) return;
   const roll = Math.random();
-  if (night || roll < 0.35) {
+  if (roll < (night ? 0.5 : 0.3)) {
     // Raises his arms to the sky and calls down the light.
-    anim(af, "invoke", "agartha.chime");
-    burst(af, [["agartha:holy_motes", 3], ["agartha:holy_motes", 6], ["agartha:god_rays", 28], ["agartha:aurora", 34]]);
+    anim(af, "invoke", "agartha.chime", 0.4);
+    burst(af, [["agartha:holy_motes", 3], ["agartha:holy_motes", 6], ["agartha:god_rays", 28], ["agartha:aurora", 60]]);
   } else if (roll < 0.7) {
     // Gazes toward the Pole, the axis of the world.
     face(af, { x: REALM.originX + LAYOUT.pole.x, y: B + 40, z: REALM.originZ + LAYOUT.pole.z });

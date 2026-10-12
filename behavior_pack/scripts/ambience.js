@@ -4,7 +4,7 @@
 //
 //  * Everywhere: falling snow, drifting spirit lights, golden motes, rolling
 //    mist. Never-ending sound beds (choir, high wind) with chimes, frost
-//    sparkles, spirit-choir swells, gusts and a far-off horn layered on top.
+//    sparkles, spirit-choir swells, a far-off horn and (at night) gusts on top.
 //  * Night: the aurora blazes and sings, spirit lights multiply.
 //  * Day: soft god rays fall through the haze.
 //  * High up (mountains, the summit): the wind grows louder.
@@ -103,9 +103,9 @@ const LANDMARKS = [
   { at: [LAYOUT.lake.x, B, LAYOUT.lake.z], r: 110, every: 25, run: (dim) => {
     fx(dim, "agartha:mist", abs(LAYOUT.lake.x + rnd(-60, 60), B, LAYOUT.lake.z + rnd(-40, 40)));
   } },
-  // The summit shrine: aurora close overhead.
+  // The summit shrine: the aurora is nearest here.
   { at: [LAYOUT.summit.x, LAYOUT.summit.y, LAYOUT.summit.z], r: 80, every: 30, run: (dim) => {
-    fx(dim, "agartha:aurora", abs(LAYOUT.summit.x + rnd(-20, 20), LAYOUT.summit.y + rnd(20, 30), LAYOUT.summit.z + rnd(-20, 20)));
+    fx(dim, "agartha:aurora", abs(LAYOUT.summit.x + rnd(-20, 20), LAYOUT.summit.y + rnd(45, 60), LAYOUT.summit.z + rnd(-20, 20)));
   } },
   // Heimdall's isle and the Bifröst.
   { at: [M.heimdall.x, M.heimdall.y + 20, M.heimdall.z], r: 80, every: 25, run: (dim) => {
@@ -134,8 +134,8 @@ export function ambientTick(player, tick) {
   if (due(player, "aurora", tick, night ? 14 : 34)) {
     // Mostly toward the northern mountains, sometimes overhead.
     const a = (Math.random() < 0.7 ? -Math.PI / 2 : 0) + rnd(-0.7, 0.7) * Math.PI;
-    const d = rnd(16, 40);
-    fx(dim, "agartha:aurora", at(Math.cos(a) * d, rnd(28, 46), Math.sin(a) * d));
+    const d = rnd(25, 55);
+    fx(dim, "agartha:aurora", at(Math.cos(a) * d, rnd(65, 85), Math.sin(a) * d));
   }
   if (!night && due(player, "rays", tick, rnd(60, 140))) fx(dim, "agartha:god_rays", at(rnd(-35, 35), 32, rnd(-35, 35)));
 
@@ -162,18 +162,19 @@ export function ambientTick(player, tick) {
     player.playSound("agartha.aurora_bed", { volume: 0.9 });
   }
   // Layers on top, so there is always something happening.
-  if (due(player, "gust", tick, rnd(8, 16) * 20 * (height > 50 ? 0.6 : 1))) {
+  if (night && due(player, "gust", tick, rnd(12, 24) * 20 * (height > 50 ? 0.7 : 1))) {
+    // Gusts of the north wind, at night only.
     count("agartha.wind");
-    player.playSound("agartha.wind", { volume: Math.min(1, 0.45 + height / 120 + Math.random() * 0.2) });
+    player.playSound("agartha.wind", { volume: Math.min(0.7, 0.3 + height / 200 + Math.random() * 0.1) });
   }
   const chimeRate = LANDMARKS.slice(0, 2).some((lm) => near(l, lm)) ? 0.6 : 1; // more chimes by the Pole and Yggdrasil
-  if (due(player, "chime", tick, rnd(3, 7) * 20 * chimeRate)) {
+  if (due(player, "chime", tick, rnd(15, 30) * 20 * chimeRate)) {
     const a = Math.random() * Math.PI * 2;
-    sound(dim, "agartha.chime", at(Math.cos(a) * rnd(3, 8), rnd(1, 4), Math.sin(a) * rnd(3, 8)), { pitch: rnd(0.85, 1.15) });
+    sound(dim, "agartha.chime", at(Math.cos(a) * rnd(3, 8), rnd(1, 4), Math.sin(a) * rnd(3, 8)), { pitch: rnd(0.85, 1.15), volume: 0.5 });
   }
-  if (due(player, "sparkle", tick, rnd(2, 5) * 20 * (night ? 0.7 : 1))) {
+  if (due(player, "sparkle", tick, rnd(12, 25) * 20 * (night ? 0.8 : 1))) {
     const a = Math.random() * Math.PI * 2;
-    sound(dim, "agartha.sparkle", at(Math.cos(a) * rnd(2, 6), rnd(0, 3), Math.sin(a) * rnd(2, 6)), { pitch: rnd(0.9, 1.2) });
+    sound(dim, "agartha.sparkle", at(Math.cos(a) * rnd(2, 6), rnd(0, 3), Math.sin(a) * rnd(2, 6)), { pitch: rnd(0.9, 1.2), volume: 0.45 });
   }
   if (due(player, "swell", tick, rnd(18, 35) * 20)) {
     count("agartha.swell");

@@ -613,7 +613,7 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) 
       if (!player) break;
       player.playSound("agartha.chime");
       system.runTimeout(() => player.isValid && player.playSound("agartha.welcome"), 30);
-      for (const [id, dy] of [["agartha:snowfall", 6], ["agartha:holy_motes", 1], ["agartha:spirit_lights", 1], ["agartha:god_rays", 25], ["agartha:aurora", 30], ["agartha:mist", -1]]) {
+      for (const [id, dy] of [["agartha:snowfall", 6], ["agartha:holy_motes", 1], ["agartha:spirit_lights", 1], ["agartha:god_rays", 25], ["agartha:aurora", 60], ["agartha:mist", -1]]) {
         spawnFx(player, id, 0, dy, -6);
       }
       reply("§bPlaying Agartha's chime and arrival choir, with snow, lights, god rays, aurora and mist in front of you. §7If you see/hear nothing, check both Agartha packs are active and your Ambient/Environment volume is up.");

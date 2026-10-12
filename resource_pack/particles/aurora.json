@@ -54,8 +54,8 @@
       },
       "minecraft:particle_appearance_billboard": {
         "size": [
-          3.2,
-          "18 + variable.particle_random_3 * 14"
+          4.5,
+          "24 + variable.particle_random_3 * 18"
         ],
         "facing_camera_mode": "lookat_y",
         "uv": {
