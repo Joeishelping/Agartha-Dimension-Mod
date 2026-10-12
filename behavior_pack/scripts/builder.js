@@ -16,8 +16,8 @@ import { tileOps, eraseOps } from "./blueprint.js";
 const TICKING_AREA = "agartha_build";
 const BUILT_KEY = "agartha:built_version";
 const PROGRESS_KEY = "agartha:build_progress";
-const LOAD_WAIT_TICKS = 20 * 45;
-const LOAD_ATTEMPTS = 3;
+const LOAD_WAIT_TICKS = 20 * 15;
+const LOAD_ATTEMPTS = 4;
 
 // Fallbacks for ids/states that differ between Bedrock versions.
 const ALIASES = {
@@ -121,13 +121,17 @@ function tileLoaded(dim, tile) {
   }
 }
 
-function removeTickingArea(dim) {
+function removeTickingArea(dim, name = TICKING_AREA) {
   try {
-    dim.runCommand(`tickingarea remove ${TICKING_AREA}`);
+    dim.runCommand(`tickingarea remove ${name}`);
   } catch {
     // not present
   }
 }
+
+// Each section gets its own ticking area name: re-adding a just-removed name
+// in the same tick silently fails, which made sections wait far too long.
+let currentArea;
 
 let building = false;
 let mode = "forge";
@@ -221,7 +225,7 @@ function hover(dim, tile) {
   const x = REALM.originX + (tile.minX + tile.maxX + 1) / 2;
   const z = REALM.originZ + (tile.minZ + tile.maxZ + 1) / 2;
   try {
-    forger.teleport({ x, y: 300, z }, { dimension: dim, rotation: { x: 89, y: 0 } });
+    forger.teleport({ x, y: REALM.baseY + 40, z }, { dimension: dim, rotation: { x: 89, y: 0 } });
   } catch {
     // player busy (e.g. respawning); the ticking area still works
   }
@@ -232,15 +236,16 @@ function* loadTile(dim, tile) {
   const ox = REALM.originX;
   const oz = REALM.originZ;
   for (let attempt = 0; attempt < LOAD_ATTEMPTS; attempt++) {
-    removeTickingArea(dim);
+    if (currentArea) removeTickingArea(dim, currentArea);
+    currentArea = `${TICKING_AREA}_${tile.i + 9}_${tile.j + 9}_${attempt}`;
     try {
-      dim.runCommand(`tickingarea add ${ox + tile.minX} ${REALM.baseY} ${oz + tile.minZ} ${ox + tile.maxX} ${REALM.baseY} ${oz + tile.maxZ} ${TICKING_AREA} true`);
+      dim.runCommand(`tickingarea add ${ox + tile.minX} ${REALM.baseY} ${oz + tile.minZ} ${ox + tile.maxX} ${REALM.baseY} ${oz + tile.maxZ} ${currentArea} true`);
     } catch (e) {
       if (attempt === 0) console.warn(`[Agartha] ticking area unavailable (${e}); relying on the forging player.`);
     }
     const start = system.currentTick;
     while (system.currentTick - start < LOAD_WAIT_TICKS) {
-      if ((system.currentTick - start) % 100 === 0) hover(dim, tile);
+      if ((system.currentTick - start) % 60 === 0) hover(dim, tile);
       if (tileLoaded(dim, tile)) {
         yield* waitTicks(2);
         return true;
@@ -323,6 +328,10 @@ function* buildJob(kind) {
 }
 
 function finish(kind, arg) {
+  if (currentArea) {
+    removeTickingArea(world.getDimension("overworld"), currentArea);
+    currentArea = undefined;
+  }
   building = false;
   forger = undefined;
   const list = waiters.splice(0);
