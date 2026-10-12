@@ -40,8 +40,14 @@ const LORE = [
   "Do not stray past the edge of the world. Below the clouds there is only the long fall.",
 ];
 
+let debug = false;
+export function setAllFatherDebug(on) {
+  debug = on;
+}
+
 function say(player, text) {
   player.sendMessage(`§6§oThe All-Father: §r§f${text}`);
+  if (debug) console.warn(`[Agartha debug] All-Father to ${player.name}: ${text}`);
 }
 
 function face(af, loc) {

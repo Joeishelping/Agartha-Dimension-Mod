@@ -4,8 +4,7 @@
     "description": {
       "identifier": "agartha:mead_horn",
       "menu_category": {
-        "category": "items",
-        "group": "agartha:itemGroup.agartha"
+        "category": "items"
       }
     },
     "components": {

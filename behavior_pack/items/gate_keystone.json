@@ -4,8 +4,7 @@
     "description": {
       "identifier": "agartha:gate_keystone",
       "menu_category": {
-        "category": "items",
-        "group": "agartha:itemGroup.agartha"
+        "category": "items"
       }
     },
     "components": {

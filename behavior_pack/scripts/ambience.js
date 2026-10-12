@@ -21,6 +21,21 @@ const AMBIENCE_TICKS = 20 * 37; // the 40 s choir loop, overlapped for a seamles
 
 const next = new Map(); // `${playerId}:${kind}` -> tick
 
+// /scriptevent agartha:debug — logs what the ambience does to the content log.
+let debug = false;
+const counts = {};
+export function setAmbienceDebug(on) {
+  debug = on;
+}
+function count(kind) {
+  if (debug) counts[kind] = (counts[kind] ?? 0) + 1;
+}
+export function ambienceReport() {
+  const r = JSON.stringify(counts);
+  for (const k of Object.keys(counts)) delete counts[k];
+  return r;
+}
+
 function due(player, kind, tick, everyTicks) {
   const key = `${player.id}:${kind}`;
   if (tick < (next.get(key) ?? 0)) return false;
@@ -33,6 +48,7 @@ export function forgetPlayer(playerId) {
 }
 
 function fx(dim, id, loc) {
+  count(id);
   try {
     dim.spawnParticle(id, loc);
   } catch {
@@ -41,6 +57,7 @@ function fx(dim, id, loc) {
 }
 
 function sound(dim, id, loc, opts) {
+  count(id);
   try {
     dim.playSound(id, loc, opts);
   } catch {
@@ -124,8 +141,12 @@ export function ambientTick(player, tick) {
   }
 
   // --- Sound --------------------------------------------------------------
-  if (due(player, "choir", tick, AMBIENCE_TICKS)) player.playSound("agartha.ambience", { volume: 0.85 });
+  if (due(player, "choir", tick, AMBIENCE_TICKS)) {
+    count("agartha.ambience");
+    player.playSound("agartha.ambience", { volume: 0.85 });
+  }
   if (due(player, "wind", tick, rnd(12, 26) * 20 * (height > 50 ? 0.6 : 1))) {
+    count("agartha.wind");
     player.playSound("agartha.wind", { volume: Math.min(1, 0.35 + height / 120 + Math.random() * 0.2) });
   }
   const chimeRate = LANDMARKS.slice(0, 2).some((lm) => near(l, lm)) ? 0.6 : 1; // more chimes by the Pole and Yggdrasil

@@ -28,8 +28,8 @@ import { REALM, REGION, B, IDS } from "./config.js";
 import { LAYOUT } from "./terrain.js";
 import { ensureRealmBuilt, eraseRealm, isRealmBuilt, isRealmBuilding, markRealmUnbuilt } from "./builder.js";
 import { buildGate } from "./gate.js";
-import { ambientTick, forgetPlayer } from "./ambience.js";
-import { allFatherTick, talk, welcomeArrival } from "./allfather.js";
+import { ambientTick, forgetPlayer, setAmbienceDebug, ambienceReport } from "./ambience.js";
+import { allFatherTick, talk, welcomeArrival, setAllFatherDebug } from "./allfather.js";
 
 const TAG = "agartha_in_realm";
 const RETURN_KEY = "agartha:return";
@@ -534,6 +534,7 @@ world.afterEvents.entitySpawn.subscribe(({ entity }) => {
 });
 
 world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
+  if (!player) return;
   if (initialSpawn && !isRealmBuilding()) restoreForger(player);
   if (!player.hasTag(TAG)) return;
   if (initialSpawn && inRealmVolume(player)) {
@@ -546,10 +547,16 @@ world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
   player.setDynamicProperty(RETURN_KEY, undefined);
 });
 
-system.afterEvents.scriptEventReceive.subscribe(({ id, sourceEntity }) => {
+let debugOn = false;
+
+system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) => {
   if (!id.startsWith("agartha:")) return;
   const player = sourceEntity?.typeId === "minecraft:player" ? sourceEntity : undefined;
-  const reply = (m) => (player ? player.sendMessage(m) : world.sendMessage(m));
+  const reply = (m) => {
+    if (player) player.sendMessage(m);
+    else world.sendMessage(m);
+    if (debugOn || id === "agartha:debug") console.warn(`[Agartha] ${m.replace(/§./g, "")}`);
+  };
   switch (id) {
     case "agartha:forge":
       forge(player);
@@ -592,6 +599,13 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, sourceEntity }) => {
       }
       lines.push(`§bPortal block: §f${portalOk ? "loaded" : "MISSING — activate both Agartha packs"}`);
       for (const l of lines) reply(l);
+      break;
+    }
+    case "agartha:debug": {
+      debugOn = message.trim().toLowerCase() !== "off";
+      setAmbienceDebug(debugOn);
+      setAllFatherDebug(debugOn);
+      reply(`§7Agartha debug logging ${debugOn ? "on (see the content log)" : "off"}.`);
       break;
     }
     case "agartha:fx_test": {
@@ -661,6 +675,7 @@ function realmTick() {
   let anyoneHere = false;
   const inRealm = [];
   for (const player of world.getAllPlayers()) {
+    if (!player?.isValid) continue;
     if (player.getGameMode() !== GameMode.Spectator && inPortal(player)) {
       usePortal(player);
       continue;
@@ -690,6 +705,9 @@ function realmTick() {
 
   if (anyoneHere && tick % 200 === 0 && !isRealmBuilding()) mendExit();
   if (tick % 110 === 0 && !isRealmBuilding()) portalHum();
+  if (debugOn && tick % 400 === 0) {
+    console.warn(`[Agartha debug] tick ${tick}: ${inRealm.length} player(s) in Agartha; ambience in last 20 s: ${ambienceReport()}`);
+  }
   if (anyoneHere && tick % 20 === 0 && !isRealmBuilding()) {
     try {
       const t = world.getTimeOfDay();
