@@ -73,6 +73,14 @@ expect(new Set(mc.fxLog).size >= 6, `many kinds of effects (${[...new Set(mc.fxL
 const choirBefore = count(mc.soundLog, "agartha.ambience");
 ticks(20 * 40);
 expect(count(mc.soundLog, "agartha.ambience") - choirBefore >= 1, "the 2-minute choir loops round again");
+// A custom one-hour track: set its length, and it restarts once, then waits the hour.
+fire("system.scriptEventReceive", { id: "agartha:music_length", message: "60:00", sourceEntity: p });
+const choirAt = count(mc.soundLog, "agartha.ambience");
+ticks(20 * 150);
+expect(count(mc.soundLog, "agartha.ambience") - choirAt === 1, `music_length 60:00: the music restarts once and then waits an hour (${count(mc.soundLog, "agartha.ambience") - choirAt}x in 150 s)`);
+expect(p.log.some((e) => e[0] === "msg" && e[1].includes("loops every") && e[1].includes("60:00")), "music_length confirms the new length");
+fire("system.scriptEventReceive", { id: "agartha:music_length", message: "0", sourceEntity: p });
+expect(p.log.some((e) => e[0] === "msg" && e[1].includes("loops every") && e[1].includes("2:00")), "music_length 0 goes back to the built-in 2-minute choir");
 // Talking to the All-Father.
 const af = mc.spawned.find(([id]) => id === "agartha:allfather");
 const talkEv = { player: p, target: { typeId: "agartha:allfather", isValid: true, location: { x: OX, y: B + 1, z: OZ + 165 }, dimension: dim, teleport() {}, playAnimation() {} } };

@@ -19,11 +19,32 @@ import { REALM, B } from "./config.js";
 import { LAYOUT } from "./terrain.js";
 
 // Bed lengths minus a 2 s overlap, so they never drop out.
-const CHOIR_TICKS = 20 * 120; // the 2-minute choir loops exactly (4 s crossfade tail)
 const WIND_BED_TICKS = 20 * 28; // 30 s wind
 const AURORA_BED_TICKS = 20 * 28; // 30 s aurora song
 
 const next = new Map(); // `${playerId}:${kind}` -> tick
+
+// The music (agartha.ambience) restarts every this many seconds. The built-in
+// choir is 2 minutes; if you swap in your own ambience.ogg, set its length with
+// /scriptevent agartha:music_length <seconds> (stored in the world).
+export const MUSIC_KEY = "agartha:music_seconds";
+const DEFAULT_MUSIC_SECONDS = 120;
+let musicSeconds;
+function musicTicks() {
+  if (musicSeconds === undefined) {
+    const v = Number(world.getDynamicProperty(MUSIC_KEY));
+    musicSeconds = v > 0 ? v : DEFAULT_MUSIC_SECONDS;
+  }
+  return Math.round(musicSeconds * 20);
+}
+
+/** Sets the music's loop length (seconds; 0 = back to the built-in 120) and restarts it. */
+export function setMusicLength(seconds) {
+  musicSeconds = seconds > 0 ? seconds : DEFAULT_MUSIC_SECONDS;
+  world.setDynamicProperty(MUSIC_KEY, seconds > 0 ? seconds : undefined);
+  for (const k of [...next.keys()]) if (k.endsWith(":choir")) next.delete(k);
+  return musicSeconds;
+}
 
 // /scriptevent agartha:debug — logs what the ambience does to the content log.
 let debug = false;
@@ -149,7 +170,7 @@ export function ambientTick(player, tick) {
   // Continuous beds, each replayed 2 s before it ends so the copies overlap
   // and there is never silence: the choir always, the high wind always (louder
   // up on the peaks), the aurora's song at night.
-  if (due(player, "choir", tick, CHOIR_TICKS)) {
+  if (due(player, "choir", tick, musicTicks())) {
     count("agartha.ambience");
     player.playSound("agartha.ambience", { volume: 1 });
   }

@@ -28,7 +28,7 @@ import { REALM, REGION, B, IDS } from "./config.js";
 import { LAYOUT } from "./terrain.js";
 import { ensureRealmBuilt, eraseRealm, isRealmBuilt, isRealmBuilding, markRealmUnbuilt, setBuilderDebug } from "./builder.js";
 import { buildGate } from "./gate.js";
-import { ambientTick, forgetPlayer, setAmbienceDebug, ambienceReport } from "./ambience.js";
+import { ambientTick, forgetPlayer, setAmbienceDebug, ambienceReport, setMusicLength } from "./ambience.js";
 import { allFatherTick, talk, welcomeArrival, setAllFatherDebug } from "./allfather.js";
 
 const TAG = "agartha_in_realm";
@@ -617,6 +617,20 @@ system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) 
         spawnFx(player, id, 0, dy, -6);
       }
       reply("§bPlaying Agartha's chime and arrival choir, with snow, lights, god rays, aurora and mist in front of you. §7If you see/hear nothing, check both Agartha packs are active and your Ambient/Environment volume is up.");
+      break;
+    }
+    case "agartha:music_length": {
+      // For a custom ambience.ogg: how long it is, so it loops on time.
+      const m = message.trim().match(/^(?:(\d+):)?(\d+(?:\.\d+)?)$/);
+      if (!m) {
+        reply("§7Usage: §f/scriptevent agartha:music_length <seconds>§7 (or minutes:seconds, e.g. 60:00). §f0§7 = the built-in 2-minute choir.");
+        break;
+      }
+      const secs = Number(m[1] ?? 0) * 60 + Number(m[2]);
+      const set = setMusicLength(secs);
+      for (const p of world.getAllPlayers()) run(p, "stopsound @s agartha.ambience");
+      const mm = Math.floor(set / 60), ss = Math.round(set % 60);
+      reply(`§bAgartha's music now loops every §f${mm}:${String(ss).padStart(2, "0")}§b. It restarts from the beginning now.`);
       break;
     }
     case "agartha:gate_reset":

@@ -74,6 +74,7 @@ A floating continent about **420 blocks across** centred on **X 99,890 / Z 100,2
 | `/scriptevent agartha:rebuild` | Wipe and forge again in one go, e.g. after installing an update (everyone must leave Agartha first). |
 | `/scriptevent agartha:erase` | **Delete Agartha**: removes everything the forge built (island, clouds, All-Father, animals), carrying you over the site like forging does. Whatever stood above Y 96 there before the first forge doesn't come back. The Heavenly Gate in your world is left alone; break it by hand. |
 | `/scriptevent agartha:keystone` | Get the Keystone again (only when no Gate stands). |
+| `/scriptevent agartha:music_length <seconds>` | For your own music: replace `resource_pack/sounds/agartha/ambience.ogg` with your track (OGG Vorbis, same name), then set its length so it loops on time, e.g. `/scriptevent agartha:music_length 60:00` for one hour (minutes:seconds or plain seconds). `0` goes back to the built-in 2-minute choir. Saved in the world. |
 | `/scriptevent agartha:gate_reset` | Forget the Gate's location, e.g. if it was destroyed by other means. |
 | `/scriptevent agartha:fx_test` | Plays Agartha's chime and arrival choir, and shows snow, lights, god rays, aurora and mist right where you stand (works anywhere) to check sound and effects are working. |
 | `/scriptevent agartha:status` | Check that everything works: whether Agartha is forged, where the Gate is, how many of its portal blocks are present, and whether the portal block is loaded. |
