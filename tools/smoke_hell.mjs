@@ -78,6 +78,18 @@ const lv = () => Math.max(...mc.cmds.filter((c) => c.includes("lava replace air"
 const lv1 = lv();
 ticks(20 * 10);
 expect(lv() > lv1, `the lava keeps rising (Y ${lv1} -> ${lv()})`);
+// Another soul enters: the pit is flushed and the fire starts over.
+const late = makePlayer();
+late.location = { x: 520, y: 70, z: 520 };
+const cmdsBeforeEntry = mc.cmds.length;
+fire("system.scriptEventReceive", { id: "agartha:hell_enter", message: "", sourceEntity: late });
+ticks(10);
+expect(inHell(late) && mc.cmds.slice(cmdsBeforeEntry).some((c) => c.includes("air replace lava") && Number(c.split(" ")[2]) > L.PIT.floorY + 70), "a soul entering Hell flushes the lava, top to bottom");
+const fillsAfterEntry = lavaFills();
+ticks(20 * 8);
+expect(lavaFills() === fillsAfterEntry, "and the fire waits before it rises again");
+fire("system.scriptEventReceive", { id: "agartha:hell_release", message: "", sourceEntity: late });
+ticks(20 * 6);
 expect(mc.entities.filter((e) => e.isValid && e.typeId === "agartha:soul").length === 16, "sixteen souls climb the spiral");
 const soul = mc.entities.find((e) => e.typeId === "agartha:soul");
 const soulAt = { ...soul.location };
@@ -133,7 +145,8 @@ expect((prop(p, "glyphs") & 1) === 1 && titles(p).some((x) => x.includes("AZ")),
 const arrowsBefore = mc.entities.filter((e) => e.typeId === "minecraft:arrow").length;
 const sl = L.SLITS[5];
 stand(p, Math.round(sl.x * 0.85) + 0.5, sl.y - 1, Math.round(sl.z * 0.85) + 0.5);
-ticks(20 * 6);
+// The slits skip shots at random, so give them a few chances.
+for (let i = 0; i < 15 && mc.entities.filter((e) => e.typeId === "minecraft:arrow").length === arrowsBefore; i++) ticks(20);
 const arrows = mc.entities.filter((e) => e.typeId === "minecraft:arrow");
 expect(arrows.length > arrowsBefore && arrows.some((a) => a.impulse), `arrow slits shoot at you (${arrows.length - arrowsBefore} arrows)`);
 // A vent of soul fire erupts under you.

@@ -145,6 +145,9 @@ const returning = new Map(); // playerId -> tick they were last sent to the bott
 /** Drops a soul at the bottom of the pit. `again` = this is a recurrence. */
 function toBottom(player, again, line) {
   returning.set(player.id, system.currentTick);
+  // Every arrival at the bottom (entering Hell, dying, being sent back) starts
+  // the ascent over: the pit is flushed of its fire, top to bottom.
+  drainLava(LAVA_START_DELAY, true);
   player.teleport(arrivalLoc(), { dimension: dim(), facingLocation: abs(ARRIVAL.face.x + 0.5, ARRIVAL.face.y + 1, ARRIVAL.face.z + 0.5) });
   runHours.set(player.id, 0);
   zonesSeen.delete(player.id);
@@ -284,8 +287,6 @@ world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
   player.setDynamicProperty(P.dead, undefined);
   const lostWager = !!player.getDynamicProperty(P.wager);
   player.setDynamicProperty(P.wager, undefined);
-  // Every death starts the ascent over: the pit is flushed of its fire.
-  drainLava(LAVA_START_DELAY, true);
   system.runTimeout(() => {
     if (!player.isValid) return;
     zoneOfPlayer.delete(player.id);
@@ -496,7 +497,11 @@ function* drainJob(top) {
 }
 
 function drainLava(restartDelay, full = false) {
-  if (lava.draining) return;
+  if (lava.draining) {
+    // Already flushing: just make sure the fire waits before rising again.
+    lava.nextRise = Math.max(lava.nextRise, system.currentTick + (restartDelay ?? LAVA_START_DELAY));
+    return;
+  }
   const top = full ? LAVA_MAX_Y + 3 : Math.max(lava.level ?? PIT.floorY, PIT.floorY) + 2;
   lava.level = null;
   lava.draining = true;

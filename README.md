@@ -72,7 +72,7 @@ Where Agartha is light, ice and ascent above the clouds, Hell is the floor of th
 
 1. **Forge it** (in person, like Agartha): `/scriptevent agartha:forge_hell`. You're carried through the deep while it's carved, then returned and given the **Heart Scarab of the Duat**.
 2. **Open the Hellmouth**: use the Heart Scarab on the ground. A weeping, horned beast's head of blackstone rises, its jaws held open around the portal. It's the one way down. If it's sealed (every portal block broken), the Scarab returns.
-3. **Walk into its jaws.** Every soul arrives at the very bottom of the pit.
+3. **Walk into its jaws.** Every soul arrives at the very bottom of the pit, and the lava is reset: whenever anyone enters Hell or dies in it, the pit is flushed and the fire starts again from the floor.
 
 Hell is about three times larger than Agartha's first underworld: a pit, a city, and a cavern, one after another. Its creatures are custom ones, so they hunt you **on any difficulty, even Peaceful**.
 
@@ -86,7 +86,7 @@ A pit 80 blocks deep and 31 across, of blackstone and deepslate, with weeping wa
 - **Crumbling steps** give way under anyone who lingers, and grow back later. Some steps are simply missing: jump.
 - **The souls are not your friends.** Sixteen translucent, hollow-eyed souls crawl up the spiral beside you. Get too close and one **seizes you and tries to throw you off the stair** into the void, then falls away wailing. They whisper, too.
 - **Waves of the damned**: the **Damned** (charred walkers that claw and slow you) and **hellhounds** (fast; they leap, and their bite sets you alight), with champions higher up. In the upper Hours, **Furies** come down out of the dark.
-- **Dying anywhere in Hell sends you back to the very bottom** ("AGAIN, ascent N"), and **the lava resets**: the pit is flushed and the fire starts again from the floor. Hell remembers how many times you've climbed, how you died ("You remember the burning.") and where ("You died here."). You can't dig or build your way out: nothing breaks except cracked bricks, and nothing you place stays.
+- **Dying anywhere in Hell sends you back to the very bottom** ("AGAIN, ascent N"), and **the lava resets**: the pit is flushed and the fire starts again from the floor. (It resets too whenever someone new enters Hell.) Hell remembers how many times you've climbed, how you died ("You remember the burning.") and where ("You died here."). You can't dig or build your way out: nothing breaks except cracked bricks, and nothing you place stays.
 - **The hidden way:** halfway up, stepping stones hang over the void. Climb them back the way you came, leap to a ledge in the east wall, and break through the cracked bricks. A dark tunnel with lava to jump runs straight into the City of Dis, past its outer wall.
 
 ### Layer II: the City of Dis
@@ -174,7 +174,7 @@ Bedrock add-ons **can't create real dimensions**, so Agartha is a sealed pocket 
 Requires Bedrock **1.21.90+**. No experimental toggles are needed.
 
 ## Install & updates
-Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v2.2.0.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v2.2.0 (Behavior)** and **Agartha v2.2.0 (Resources)**.
+Run `./tools/package.sh` and open **`dist/Agartha_v<version>.mcaddon`** (currently `Agartha_v2.2.1.mcaddon`), then activate **both** packs on your world. In Minecraft they show as **Agartha v2.2.1 (Behavior)** and **Agartha v2.2.1 (Resources)**.
 
 Every update gets a new version number (in `VERSION`) stamped into the file name, the pack names, and the pack versions. Importing a newer `.mcaddon` replaces the older packs instead of being refused as a duplicate. For a new release, bump `VERSION` and run `./tools/package.sh`.
 
