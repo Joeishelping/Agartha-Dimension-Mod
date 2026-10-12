@@ -19,7 +19,7 @@ import { REALM, B } from "./config.js";
 import { LAYOUT } from "./terrain.js";
 
 // Bed lengths minus a 2 s overlap, so they never drop out.
-const CHOIR_TICKS = 20 * 38; // 40 s choir
+const CHOIR_TICKS = 20 * 120; // the 2-minute choir loops exactly (4 s crossfade tail)
 const WIND_BED_TICKS = 20 * 28; // 30 s wind
 const AURORA_BED_TICKS = 20 * 28; // 30 s aurora song
 

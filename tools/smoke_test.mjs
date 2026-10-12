@@ -64,12 +64,15 @@ mc.fxLog.length = 0;
 ticks(20 * 90);
 expect(inRealm(p), "still in Agartha after a minute and a half");
 const count = (arr, id) => arr.filter((x) => x === id).length;
-expect(count(mc.soundLog, "agartha.ambience") >= 2, `the choir keeps playing (${count(mc.soundLog, "agartha.ambience")}x in 90 s)`);
 expect(count(mc.soundLog, "agartha.chime") >= 2 && count(mc.soundLog, "agartha.chime") <= 14, `chimes recur, but gently (${count(mc.soundLog, "agartha.chime")} chimes, night bells and All-Father calls in 90 s at night)`);
 expect(count(mc.soundLog, "agartha.wind_bed") >= 3, `the wind bed never stops (${count(mc.soundLog, "agartha.wind_bed")}x 30 s clips in 90 s)`);
 expect(count(mc.soundLog, "agartha.sparkle") >= 3 && count(mc.soundLog, "agartha.swell") >= 2, `sparkles and choir swells layered on top (${count(mc.soundLog, "agartha.sparkle")} sparkles, ${count(mc.soundLog, "agartha.swell")} swells)`);
 expect(count(mc.fxLog, "agartha:snowfall") > 200 && count(mc.fxLog, "agartha:aurora") > 50, `effects never stop (${mc.fxLog.length} effects in 90 s)`);
 expect(new Set(mc.fxLog).size >= 6, `many kinds of effects (${[...new Set(mc.fxLog)].join(", ")})`);
+// The 2-minute choir is replayed back to back, so it never stops.
+const choirBefore = count(mc.soundLog, "agartha.ambience");
+ticks(20 * 40);
+expect(count(mc.soundLog, "agartha.ambience") - choirBefore >= 1, "the 2-minute choir loops round again");
 // Talking to the All-Father.
 const af = mc.spawned.find(([id]) => id === "agartha:allfather");
 const talkEv = { player: p, target: { typeId: "agartha:allfather", isValid: true, location: { x: OX, y: B + 1, z: OZ + 165 }, dimension: dim, teleport() {}, playAnimation() {} } };

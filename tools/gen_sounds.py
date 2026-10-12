@@ -115,30 +115,6 @@ def write_ogg(name, x):
     print("wrote", name)
 
 
-# --- Ambience: a slow choir drone with airy wind and high shimmer ------------
-def ambience(sec=40):
-    t = t_axis(sec + 3)
-    chords = [[146.83, 220.0, 293.66, 369.99], [130.81, 196.0, 261.63, 329.63], [146.83, 220.0, 329.63, 440.0], [123.47, 185.0, 246.94, 369.99]]
-    seg = len(t) // len(chords)
-    out = np.zeros_like(t)
-    for i, chord in enumerate(chords):
-        env = np.exp(-(((np.arange(len(t)) - (i + 0.5) * seg) / (seg * 0.62)) ** 2))
-        for f in chord:
-            out += voice(f, t, bright=0.7) * env * 0.25
-            out += voice(f * 2.003, t, bright=0.4) * env * 0.06
-    air = band_noise(len(t), 300, 2500) * (0.5 + 0.5 * smooth_noise(len(t), 0.15)) * 0.25
-    shimmer = np.zeros_like(t)
-    for _ in range(14):
-        start = rng.uniform(0, sec)
-        f = rng.choice([1174.66, 1318.51, 1479.98, 1760.0, 1975.53])
-        tt = np.clip(t - start, 0, None)
-        shimmer += bell(f, tt, decay=0.9) * (t >= start) * 0.08
-    mix = reverb(out + air + shimmer, 3.0, 0.5)
-    # Soft edges: the script replays it 2 s before it ends, so copies overlap
-    # and the bed never drops out.
-    return normalize(fade(loopable(mix), 2.0, 2.0), 0.8)
-
-
 def chime(seed_notes):
     t = t_axis(4)
     out = np.zeros_like(t)
@@ -251,7 +227,7 @@ def harp(notes, sec=5):
 
 
 if __name__ == "__main__":
-    write_ogg("ambience", ambience())
+    # The choir (ambience.ogg) is made by tools/gen_choir.py.
     for i, notes in enumerate([[1318.51, 1760.0, 1975.53], [1174.66, 1479.98, 2349.32, 1760.0], [987.77, 1318.51, 1479.98], [1567.98, 2093.0, 1318.51, 1760.0, 2637.02]]):
         write_ogg(f"chime{i + 1}", chime(notes))
     write_ogg("wind1", wind())
